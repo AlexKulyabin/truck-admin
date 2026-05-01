@@ -490,9 +490,10 @@ export function ParkingDetailsPanel({
   const title = parkingDetails?.address ?? parking.address ?? messages.noAddress
   const hasHeroPhotos = photos.length > 0
   const heroPhotos = hasHeroPhotos ? photos : []
-  const activeHeroPhoto = hasHeroPhotos
-    ? heroPhotos[Math.min(activePhotoIndex, heroPhotos.length - 1)]
-    : null
+  const currentPhotoIndex = hasHeroPhotos
+    ? activePhotoIndex % heroPhotos.length
+    : 0
+  const activeHeroPhoto = hasHeroPhotos ? heroPhotos[currentPhotoIndex] : null
   const authorName = author.fullName?.trim() || messages.anonymousUser
   const authorInitial = authorName.charAt(0).toUpperCase()
 
@@ -557,7 +558,7 @@ export function ParkingDetailsPanel({
         {activeHeroPhoto ? (
           <img
             alt={title}
-            className="h-64 w-full object-cover md:h-[21.25rem]"
+            className="pointer-events-none h-64 w-full object-cover md:h-[21.25rem]"
             src={activeHeroPhoto.url}
           />
         ) : (
@@ -582,16 +583,18 @@ export function ParkingDetailsPanel({
           <>
             <button
               aria-label={messages.photo}
-              className="absolute left-5 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface/92 text-text-primary shadow-card transition hover:bg-surface"
+              className="absolute left-5 top-1/2 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface/92 text-text-primary shadow-card transition hover:bg-surface active:scale-95"
               onClick={goToPreviousPhoto}
+              onMouseDown={(event) => event.preventDefault()}
               type="button"
             >
               <img alt="" aria-hidden="true" className="size-5" src={arrowIcon} />
             </button>
             <button
               aria-label={messages.photo}
-              className="absolute right-5 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface/92 text-text-primary shadow-card transition hover:bg-surface"
+              className="absolute right-5 top-1/2 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface/92 text-text-primary shadow-card transition hover:bg-surface active:scale-95"
               onClick={goToNextPhoto}
+              onMouseDown={(event) => event.preventDefault()}
               type="button"
             >
               <img
@@ -601,16 +604,17 @@ export function ParkingDetailsPanel({
                 src={arrowIcon}
               />
             </button>
-            <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/25 px-3 py-1.5 backdrop-blur-sm">
+            <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/25 px-3 py-1.5 backdrop-blur-sm">
               {heroPhotos.map((photo, index) => (
                 <button
                   aria-label={`${messages.photo} ${index + 1}`}
                   className={cn(
                     'size-2.5 rounded-full transition',
-                    index === activePhotoIndex ? 'bg-white' : 'bg-white/45',
+                    index === currentPhotoIndex ? 'bg-white' : 'bg-white/45',
                   )}
                   key={photo.id}
                   onClick={() => setActivePhotoIndex(index)}
+                  onMouseDown={(event) => event.preventDefault()}
                   type="button"
                 />
               ))}
