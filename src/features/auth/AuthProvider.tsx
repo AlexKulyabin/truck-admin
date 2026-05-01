@@ -6,7 +6,19 @@ import {
   useState,
   type PropsWithChildren,
 } from 'react'
-import { getSupabaseClient, supabase } from '../../lib/supabase'
+import { USER_STATUSES } from '../../constants/userStatuses'
+import { supabase } from '../../lib/supabase'
+import {
+  getCurrentSession,
+  onAuthSessionChange,
+  requestPasswordReset,
+  resendSignUpEmail,
+  signInWithPassword,
+  signOut,
+  signUpWithPassword,
+  updateCurrentUserPassword,
+} from '../../services/authService'
+import { getUserProfile, waitForUserProfile } from '../../services/userService'
 import {
   AuthContext,
   type AuthContextValue,
@@ -15,8 +27,6 @@ import {
 } from './AuthContext'
 
 const AUTH_INIT_TIMEOUT_MS = 1500
-const PROFILE_RETRY_ATTEMPTS = 8
-const PROFILE_RETRY_DELAY_MS = 500
 
 function getUnknownErrorMessage(error: unknown) {
   if (error instanceof Error) {
@@ -33,58 +43,8 @@ function getUnknownErrorMessage(error: unknown) {
   return ''
 }
 
-function normalizeProfile(profile: UserProfile) {
-  return {
-    ...profile,
-    status: profile.status ?? 'pending',
-  }
-}
-
-async function loadProfile(userId: string) {
-  const client = getSupabaseClient()
-  const { data, error } = await client
-    .from('users')
-    .select(
-      'id, created_at, full_name, avatar_url, phone, is_premium, referral_code, theme, updated_at, status',
-    )
-    .eq('id', userId)
-    .single()
-
-  if (error) {
-    throw error
-  }
-
-  return normalizeProfile(data as UserProfile)
-}
-
 function getUserFromSession(session: Session | null) {
   return session?.user ?? null
-}
-
-async function waitForProfile(userId: string) {
-  let lastError: unknown
-
-  for (let attempt = 0; attempt < PROFILE_RETRY_ATTEMPTS; attempt += 1) {
-    try {
-      return await loadProfile(userId)
-    } catch (error) {
-      lastError = error
-
-      if (attempt < PROFILE_RETRY_ATTEMPTS - 1) {
-        await new Promise((resolve) => {
-          window.setTimeout(resolve, PROFILE_RETRY_DELAY_MS)
-        })
-      }
-    }
-  }
-
-  const errorMessage = getUnknownErrorMessage(lastError)
-
-  throw new Error(
-    errorMessage
-      ? `PROFILE_UNAVAILABLE: ${errorMessage}`
-      : 'PROFILE_UNAVAILABLE',
-  )
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number) {
@@ -111,7 +71,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       return null
     }
 
-    const nextProfile = await loadProfile(currentUser.id)
+    const nextProfile = await getUserProfile(currentUser.id)
     setProfile(nextProfile)
     return nextProfile
   }, [])
@@ -123,7 +83,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       return
     }
 
-    withTimeout(supabase.auth.getSession(), AUTH_INIT_TIMEOUT_MS)
+    withTimeout(getCurrentSession(), AUTH_INIT_TIMEOUT_MS)
       .then(async ({ data }) => {
         if (!isMounted) {
           return
@@ -151,9 +111,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         }
       })
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const subscription = onAuthSessionChange((session) => {
       setProfileFromUser(getUserFromSession(session)).catch(() => {
         setProfile(null)
       })
@@ -171,95 +129,78 @@ export function AuthProvider({ children }: PropsWithChildren) {
       return null
     }
 
-    const nextProfile = await loadProfile(user.id)
+    const nextProfile = await getUserProfile(user.id)
     setProfile(nextProfile)
     return nextProfile
   }, [user])
 
-  const signIn = useCallback(
-    async (email: string, password: string) => {
-      const client = getSupabaseClient()
-      const { data, error } = await client.auth.signInWithPassword({
-        email,
-        password,
-      })
+  const signIn = useCallback(async (email: string, password: string) => {
+    const data = await signInWithPassword(email, password)
+    const nextProfile = await getUserProfile(data.user.id)
 
-      if (error || !data.user) {
-        throw error ?? new Error('Unable to sign in')
+    setUser(data.user)
+    setProfile(nextProfile)
+
+    return nextProfile.status
+  }, [])
+
+  const signUp = useCallback(
+    async (email: string, password: string): Promise<SignUpResult> => {
+      const data = await signUpWithPassword(email, password)
+
+      if (!data.session) {
+        return {
+          confirmationRequired: true,
+          status: USER_STATUSES.PENDING,
+        }
       }
 
-      const nextProfile = await loadProfile(data.user.id)
-      setUser(data.user)
+      const signedUpUser = data.user
+
+      if (!signedUpUser) {
+        throw new Error('Unable to sign up')
+      }
+
+      let nextProfile: UserProfile
+
+      try {
+        nextProfile = await waitForUserProfile(signedUpUser.id)
+      } catch (error) {
+        const errorMessage = getUnknownErrorMessage(error)
+
+        throw new Error(
+          errorMessage
+            ? `PROFILE_UNAVAILABLE: ${errorMessage}`
+            : 'PROFILE_UNAVAILABLE',
+          { cause: error },
+        )
+      }
+
+      setUser(signedUpUser)
       setProfile(nextProfile)
-      return nextProfile.status
+
+      return {
+        confirmationRequired: false,
+        status: nextProfile.status,
+      }
     },
     [],
   )
 
-  const signUp = useCallback(async (email: string, password: string): Promise<SignUpResult> => {
-    const client = getSupabaseClient()
-    const { data, error } = await client.auth.signUp({
-      email,
-      password,
-    })
-
-    if (error || !data.user) {
-      throw error ?? new Error('Unable to sign up')
-    }
-
-    if (!data.session) {
-      return { confirmationRequired: true, status: 'pending' }
-    }
-
-    const nextProfile = await waitForProfile(data.user.id)
-    setUser(data.user)
-    setProfile(nextProfile)
-    return { confirmationRequired: false, status: nextProfile.status }
-  }, [])
-
   const resendSignUpConfirmation = useCallback(async (email: string) => {
-    const client = getSupabaseClient()
-    const { error } = await client.auth.resend({
-      email,
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
-      type: 'signup',
-    })
-
-    if (error) {
-      throw error
-    }
+    await resendSignUpEmail(email)
   }, [])
 
   const resetPassword = useCallback(async (email: string) => {
-    const client = getSupabaseClient()
-    const { error } = await client.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    })
-
-    if (error) {
-      throw error
-    }
+    await requestPasswordReset(email)
   }, [])
 
   const updatePassword = useCallback(async (password: string) => {
-    const client = getSupabaseClient()
-    const { error } = await client.auth.updateUser({ password })
-
-    if (error) {
-      throw error
-    }
+    await updateCurrentUserPassword(password)
   }, [])
 
   const logout = useCallback(async () => {
-    const client = getSupabaseClient()
-    const { error } = await client.auth.signOut()
-
-    if (error) {
-      throw error
-    }
-
+    await signOut()
     setUser(null)
     setProfile(null)
   }, [])

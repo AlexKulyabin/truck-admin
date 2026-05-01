@@ -1,3 +1,5 @@
+import type { UserStatus } from '../../constants/userStatuses'
+
 export type AuthCopy = {
   title: string
   registerTitle: string
@@ -57,4 +59,4 @@ export type AuthCopy = {
 
 export type Locale = 'ru' | 'en'
 
-export type ReviewStatus = 'pending' | 'approved' | 'rejected'
+export type ReviewStatus = UserStatus

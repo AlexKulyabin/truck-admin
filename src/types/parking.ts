@@ -1,0 +1,62 @@
+import type { Tables, TablesInsert } from '../../types/supabase'
+
+export type ParkingRow = Tables<'parkings'>
+export type ParkingInsert = TablesInsert<'parkings'>
+
+export type ParkingPoint = {
+  id: string
+  capacity: number | null
+  latitude: number
+  longitude: number
+  name: string
+  notes: string
+}
+
+export type ParkingMapItem = {
+  id: string
+  address: string | null
+  count: number
+  isCluster: boolean
+  latitude: number
+  longitude: number
+  rating: number | null
+}
+
+export type ParkingMapBounds = {
+  maxLat: number
+  maxLng: number
+  minLat: number
+  minLng: number
+}
+
+export type ParkingMapCenter = {
+  lat: number
+  lng: number
+}
+
+export type ParkingMapFilters = {
+  maxCapacity: number
+  minCapacity: number
+  needGas: boolean
+  needHotel: boolean
+  needLaundry: boolean
+  needRecreation: boolean
+  needShop: boolean
+  needShower: boolean
+  searchQuery: string
+}
+
+export type ParkingMapRequest = {
+  bounds: ParkingMapBounds
+  center: ParkingMapCenter
+  filters?: Partial<ParkingMapFilters>
+  zoom: number
+}
+
+export type CreateParkingPointInput = {
+  capacity: number | null
+  latitude: number
+  longitude: number
+  name: string
+  notes: string
+}

@@ -17,6 +17,10 @@
   --color-success-muted: #a7e8bf;
   --color-warning: #ff9800;
   --color-warning-muted: #ffd596;
+  --color-map-marker: #1f6f43;
+  --color-map-marker-dark: #185a36;
+  --color-map-marker-muted: #eef3ec;
+  --color-form-border: #cfd8cc;
 
   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
   --font-heading: Roboto, ui-sans-serif, system-ui, sans-serif;

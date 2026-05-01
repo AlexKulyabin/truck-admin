@@ -1,12 +1,9 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import type { ReviewStatus } from './authTypes'
+import {
+  canAccessDashboard,
+  getAuthRedirectPath,
+} from '../../domain/accessRules'
 import { useAuth } from './useAuth'
-
-const statusRoutes: Record<ReviewStatus, string> = {
-  pending: '/review-status',
-  approved: '/app',
-  rejected: '/review-status',
-}
 
 export function GuestRoute() {
   const { loading, status, user } = useAuth()
@@ -16,7 +13,7 @@ export function GuestRoute() {
   }
 
   if (user && status) {
-    return <Navigate to={statusRoutes[status]} replace />
+    return <Navigate to={getAuthRedirectPath(status)} replace />
   }
 
   return <Outlet />
@@ -33,7 +30,7 @@ export function ProtectedRoute() {
     return <Navigate to="/" replace />
   }
 
-  if (status !== 'approved') {
+  if (!canAccessDashboard(status)) {
     return <Navigate to="/review-status" replace />
   }
 
@@ -51,7 +48,7 @@ export function ReviewRoute() {
     return <Navigate to="/" replace />
   }
 
-  if (status === 'approved') {
+  if (canAccessDashboard(status)) {
     return <Navigate to="/app" replace />
   }
 
