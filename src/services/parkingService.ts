@@ -6,11 +6,13 @@ import type {
   ParkingAuthor,
   ParkingComplaint,
   ParkingReportRow,
+  CreateParkingInput,
   CreateParkingPointInput,
   ParkingListItem,
   ParkingMapFilters,
   ParkingMapItem,
   ParkingPhoto,
+  ParkingPhotoInsert,
   ParkingPhotoRow,
   ParkingRatingSummary,
   ParkingReview,
@@ -20,6 +22,8 @@ import type {
   ParkingPoint,
   ParkingRow,
 } from '../types/parking'
+
+const PARKING_CONTENT_BUCKET = 'parking_content'
 
 const DEFAULT_MAP_FILTERS: ParkingMapFilters = {
   maxCapacity: 0,
@@ -81,6 +85,60 @@ const REPORT_LABELS: Record<string, string> = {
   report1: 'Parking does not exist',
   report2: 'A dangerous place',
   report3: 'Another problem',
+}
+
+function dataUrlToBlob(dataUrl: string) {
+  return fetch(dataUrl).then((response) => response.blob())
+}
+
+function getFileExtension(mimeType: string) {
+  const extension = mimeType.split('/')[1]?.split(';')[0]
+
+  if (!extension) {
+    return 'jpg'
+  }
+
+  return extension === 'jpeg' ? 'jpg' : extension
+}
+
+function createParkingPhotoFileName(index: number, mimeType: string) {
+  const uniqueId =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${index}`
+
+  return `${Date.now()}-${uniqueId}.${getFileExtension(mimeType)}`
+}
+
+function normalizeNewParkingAddress(address: string) {
+  const normalizedAddress = address.trim()
+  return normalizedAddress || 'no address'
+}
+
+function normalizeCapacity(value: number | null) {
+  if (value === null || !Number.isFinite(value) || value < 0) {
+    return null
+  }
+
+  return Math.trunc(value)
+}
+
+function getSupabaseErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  if (typeof error === 'object' && error !== null) {
+    const record = error as Record<string, unknown>
+    const parts = [record.message, record.code, record.details, record.hint]
+      .filter((value): value is string => typeof value === 'string' && value.length > 0)
+
+    if (parts.length > 0) {
+      return parts.join(' ')
+    }
+  }
+
+  return 'Unknown Supabase error'
 }
 
 function normalizeParkingPoint(point: ParkingPointRow): ParkingPoint {
@@ -490,4 +548,83 @@ export async function createParkingPoint(parkingPoint: CreateParkingPointInput) 
   }
 
   return normalizeParkingPoint(data)
+}
+
+export async function createParking(parking: CreateParkingInput) {
+  const client = getSupabaseClient()
+  const {
+    data: { user },
+    error: userError,
+  } = await client.auth.getUser()
+
+  if (userError || !user) {
+    throw userError ?? new Error('Unable to resolve current user')
+  }
+
+  const address = normalizeNewParkingAddress(parking.address)
+  const parkingInsert: ParkingInsert = {
+    address,
+    address_lower: address.toLowerCase(),
+    created_by: user.id,
+    has_gas_station: parking.services.gas,
+    has_hotel: parking.services.hotel,
+    has_laundry: parking.services.laundry,
+    has_recreation_area: parking.services.recreation,
+    has_shop: parking.services.shop,
+    has_shower: parking.services.shower,
+    latitude: parking.latitude,
+    longitude: parking.longitude,
+    status: PARKING_STATUSES.APPROVED,
+    total_spaces: normalizeCapacity(parking.capacity),
+  }
+
+  const { data: createdParking, error: parkingError } = await client
+    .from(SUPABASE_TABLES.PARKINGS)
+    .insert(parkingInsert)
+    .select('id')
+    .single()
+
+  if (parkingError) {
+    throw new Error(`Create parking failed: ${getSupabaseErrorMessage(parkingError)}`)
+  }
+
+  const photoRows: ParkingPhotoInsert[] = []
+
+  for (const [index, photo] of parking.photos.entries()) {
+    const blob = await dataUrlToBlob(photo)
+    const fileName = createParkingPhotoFileName(index, blob.type)
+    const path = `parkings/${createdParking.id}/${fileName}`
+    const { error: uploadError } = await client.storage
+      .from(PARKING_CONTENT_BUCKET)
+      .upload(path, blob, {
+        contentType: blob.type || 'image/jpeg',
+        upsert: false,
+      })
+
+    if (uploadError) {
+      throw new Error(`Upload parking photo failed: ${getSupabaseErrorMessage(uploadError)}`)
+    }
+
+    const {
+      data: { publicUrl },
+    } = client.storage.from(PARKING_CONTENT_BUCKET).getPublicUrl(path)
+
+    photoRows.push({
+      parking_id: createdParking.id,
+      url: publicUrl,
+      user_id: user.id,
+    })
+  }
+
+  if (photoRows.length > 0) {
+    const { error: photosError } = await client
+      .from(SUPABASE_TABLES.PARKING_PHOTOS)
+      .insert(photoRows)
+
+    if (photosError) {
+      throw new Error(`Create parking photo records failed: ${getSupabaseErrorMessage(photosError)}`)
+    }
+  }
+
+  return createdParking.id
 }

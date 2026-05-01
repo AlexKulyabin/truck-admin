@@ -4,6 +4,7 @@ import { getParkingMessages } from '../../constants/parkingI18n'
 import { useParkingList } from '../../hooks/useParkingList'
 import { useSystemLocale } from '../../hooks/useSystemLocale'
 import type { ParkingListItem } from '../../types/parking'
+import { useParkingAdminPanels } from './useParkingAdminPanels'
 import { ParkingListRow } from './ParkingListRow'
 
 type ParkingListPanelProps = {
@@ -26,6 +27,7 @@ export function ParkingListPanel({
   const [searchQuery, setSearchQuery] = useState('')
   const locale = useSystemLocale()
   const messages = getParkingMessages(locale)
+  const { showAddParking } = useParkingAdminPanels()
   const { error, isLoading, parkingItems } = useParkingList(searchQuery)
   const heading = useMemo(() => messages.parkingList, [messages.parkingList])
 
@@ -60,6 +62,7 @@ export function ParkingListPanel({
 
         <button
           className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 font-heading text-base leading-6 font-medium text-white transition hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
+          onClick={showAddParking}
           type="button"
         >
           <Plus aria-hidden="true" className="size-6" />

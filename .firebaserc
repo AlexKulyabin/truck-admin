@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "js-truck-park"
+  },
+  "targets": {
+    "js-truck-park": {
+      "hosting": {
+        "admin": [
+          "js-truck-park-admin"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

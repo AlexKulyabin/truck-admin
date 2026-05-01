@@ -1,10 +1,15 @@
 import { createContext } from 'react'
 
-export type ParkingAdminPanel = 'parking-details' | 'parking-list' | null
+export type ParkingAdminPanel =
+  | 'add-parking'
+  | 'parking-details'
+  | 'parking-list'
+  | null
 
 export type ParkingAdminPanelsContextValue = {
   activePanel: ParkingAdminPanel
   closePanel: () => void
+  showAddParking: () => void
   showParkingDetails: () => void
   showParkingList: () => void
 }

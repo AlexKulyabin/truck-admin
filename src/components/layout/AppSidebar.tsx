@@ -84,7 +84,7 @@ function SidebarButton({
 
 export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const { activePanel, showParkingList } = useParkingAdminPanels()
+  const { activePanel, showAddParking, showParkingList } = useParkingAdminPanels()
   const displayEmail = userEmail ?? 'Example@mail.com'
   const isParkingSectionActive =
     activePanel === 'parking-details' || activePanel === 'parking-list'
@@ -101,6 +101,7 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
       icon: addParkingGrayIcon,
       id: 'add-parking',
       label: 'Add parking',
+      onClick: showAddParking,
     },
     {
       activeIcon: requestsBlueIcon,
@@ -151,7 +152,10 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
             <SidebarButton
               key={item.id}
               {...item}
-              isActive={item.id === 'parking-list' && isParkingSectionActive}
+              isActive={
+                (item.id === 'parking-list' && isParkingSectionActive) ||
+                (item.id === 'add-parking' && activePanel === 'add-parking')
+              }
               isExpanded={isExpanded}
             />
           ))}
@@ -166,7 +170,10 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
           <SidebarButton
             key={item.id}
             {...item}
-            isActive={item.id === 'parking-list' && isParkingSectionActive}
+            isActive={
+              (item.id === 'parking-list' && isParkingSectionActive) ||
+              (item.id === 'add-parking' && activePanel === 'add-parking')
+            }
           />
         ))}
         <button
