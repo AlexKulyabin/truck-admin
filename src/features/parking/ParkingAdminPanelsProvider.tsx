@@ -16,6 +16,7 @@ export function ParkingAdminPanelsProvider({ children }: PropsWithChildren) {
       showEditParking: () => setActivePanel('edit-parking'),
       showParkingDetails: () => setActivePanel('parking-details'),
       showParkingList: () => setActivePanel('parking-list'),
+      showRequests: () => setActivePanel('requests'),
     }),
     [activePanel],
   )

@@ -1,4 +1,4 @@
-export type SupportedLocale = 'en' | 'ru'
+﻿export type SupportedLocale = 'en' | 'ru'
 
 type Messages = {
   addParking: string
@@ -9,6 +9,7 @@ type Messages = {
   anonymousUser: string
   capacity: string
   close: string
+  clearSearch: string
   complaints: string
   delete: string
   details: string
@@ -23,9 +24,14 @@ type Messages = {
   loadingComplaints: string
   loadingPhotos: string
   loadingReviews: string
+  accepted: string
+  new: string
+  rejected: string
+  requests: string
   noAddress: string
   noComplaints: string
   noParkings: string
+  noRequests: string
   noPhoto: string
   noPhotos: string
   noReviews: string
@@ -61,6 +67,7 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     anonymousUser: 'Deleted user',
     capacity: 'Capacity',
     close: 'Close',
+    clearSearch: 'Clear search',
     complaints: 'Complaints',
     delete: 'Delete',
     details: 'More detailed',
@@ -72,15 +79,20 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     info: 'Info',
     laundry: 'Laundry',
     loading: 'Loading...',
-    loadingComplaints: 'Loading complaints...',
-    loadingPhotos: 'Loading photos...',
-    loadingReviews: 'Loading reviews...',
-    noAddress: 'No address',
-    noComplaints: 'No complaints for this parking yet.',
-    noParkings: 'No parkings found.',
-    noPhoto: 'No photo',
-    noPhotos: 'No photos for this parking yet.',
-    noReviews: 'No reviews for this parking yet.',
+  loadingComplaints: 'Loading complaints...',
+  loadingPhotos: 'Loading photos...',
+  loadingReviews: 'Loading reviews...',
+  accepted: 'Accepted',
+  new: 'New',
+  rejected: 'Rejected',
+  requests: 'Requests',
+  noAddress: 'No address',
+  noComplaints: 'No complaints for this parking yet.',
+  noParkings: 'No parkings found.',
+  noRequests: 'No requests found.',
+  noPhoto: 'No photo',
+  noPhotos: 'No photos for this parking yet.',
+  noReviews: 'No reviews for this parking yet.',
     ok: 'OK',
     parkingList: 'Parking list',
     parkingAddedDescription: 'Parking has been added and will be displayed on the map',
@@ -111,6 +123,7 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     anonymousUser: '\u0423\u0434\u0430\u043b\u0435\u043d\u043d\u044b\u0439 \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044c',
     capacity: '\u0412\u043c\u0435\u0441\u0442\u0438\u043c\u043e\u0441\u0442\u044c',
     close: '\u0417\u0430\u043a\u0440\u044b\u0442\u044c',
+    clearSearch: '\u041e\u0447\u0438\u0441\u0442\u0438\u0442\u044c \u043f\u043e\u0438\u0441\u043a',
     complaints: '\u0416\u0430\u043b\u043e\u0431\u044b',
     delete: '\u0423\u0434\u0430\u043b\u0438\u0442\u044c',
     details: '\u041f\u043e\u0434\u0440\u043e\u0431\u043d\u0435\u0435',
@@ -122,15 +135,20 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     info: '\u0418\u043d\u0444\u043e',
     laundry: '\u041f\u0440\u0430\u0447\u0435\u0447\u043d\u0430\u044f',
     loading: '\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0430...',
-    loadingComplaints: '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u0436\u0430\u043b\u043e\u0431\u044b...',
-    loadingPhotos: '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u0444\u043e\u0442\u043e\u0433\u0440\u0430\u0444\u0438\u0438...',
-    loadingReviews: '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u043e\u0442\u0437\u044b\u0432\u044b...',
-    noAddress: '\u041d\u0435\u0442 \u0430\u0434\u0440\u0435\u0441\u0430',
-    noComplaints: '\u0414\u043b\u044f \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u0436\u0430\u043b\u043e\u0431.',
-    noParkings: '\u041f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b.',
-    noPhoto: '\u041d\u0435\u0442 \u0444\u043e\u0442\u043e',
-    noPhotos: '\u0423 \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u0444\u043e\u0442\u043e\u0433\u0440\u0430\u0444\u0438\u0439.',
-    noReviews: '\u0414\u043b\u044f \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u043e\u0442\u0437\u044b\u0432\u043e\u0432.',
+  loadingComplaints: '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u0436\u0430\u043b\u043e\u0431\u044b...',
+  loadingPhotos: '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u0444\u043e\u0442\u043e\u0433\u0440\u0430\u0444\u0438\u0438...',
+  loadingReviews: '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u043e\u0442\u0437\u044b\u0432\u044b...',
+  accepted: '\u041f\u0440\u0438\u043d\u044f\u0442\u044b\u0435',
+  new: '\u041d\u043e\u0432\u044b\u0435',
+  rejected: '\u041e\u0442\u043a\u043b\u043e\u043d\u0435\u043d\u043d\u044b\u0435',
+  requests: '\u0417\u0430\u044f\u0432\u043a\u0438',
+  noAddress: '\u041d\u0435\u0442 \u0430\u0434\u0440\u0435\u0441\u0430',
+  noComplaints: '\u0414\u043b\u044f \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u0436\u0430\u043b\u043e\u0431.',
+  noParkings: '\u041f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b.',
+  noRequests: '\u0417\u0430\u044f\u0432\u043a\u0438 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b.',
+  noPhoto: '\u041d\u0435\u0442 \u0444\u043e\u0442\u043e',
+  noPhotos: '\u0423 \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u0444\u043e\u0442\u043e\u0433\u0440\u0430\u0444\u0438\u0439.',
+  noReviews: '\u0414\u043b\u044f \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u043e\u0442\u0437\u044b\u0432\u043e\u0432.',
     ok: 'OK',
     parkingList: '\u0421\u043f\u0438\u0441\u043e\u043a \u043f\u0430\u0440\u043a\u043e\u0432\u043e\u043a',
     parkingAddedDescription: '\u041f\u0430\u0440\u043a\u043e\u0432\u043a\u0430 \u0434\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u0430 \u0438 \u0431\u0443\u0434\u0435\u0442 \u043e\u0442\u043e\u0431\u0440\u0430\u0436\u0430\u0442\u044c\u0441\u044f \u043d\u0430 \u043a\u0430\u0440\u0442\u0435',
@@ -193,6 +211,16 @@ export function formatComplaintCount(count: number, locale: SupportedLocale) {
   return `${count} complaint${count === 1 ? '' : 's'}`
 }
 
+export function formatCompactCount(count: number, locale: SupportedLocale) {
+  if (count < 1000) {
+    return String(count)
+  }
+
+  const roundedThousands = Math.round(count / 1000)
+  const suffix = locale === 'ru' ? 'к' : 'k'
+  return `${roundedThousands}${suffix}`
+}
+
 export function formatSpotsCount(count: number, locale: SupportedLocale) {
   if (locale === 'ru') {
     return `${count} ${getRussianPlural(count, '\u043c\u0435\u0441\u0442\u043e', '\u043c\u0435\u0441\u0442\u0430', '\u043c\u0435\u0441\u0442')}`
@@ -200,3 +228,4 @@ export function formatSpotsCount(count: number, locale: SupportedLocale) {
 
   return `${count} spot${count === 1 ? '' : 's'}`
 }
+

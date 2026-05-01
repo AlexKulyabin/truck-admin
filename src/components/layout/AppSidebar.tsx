@@ -9,12 +9,15 @@ import requestsGrayIcon from '../../assets/icons/requests-gray.svg'
 import reviewsBlueIcon from '../../assets/icons/reviews-blue.svg'
 import reviewsGrayIcon from '../../assets/icons/reviews-gray.svg'
 import logo from '../../assets/logos/logo.svg'
+import { formatCompactCount } from '../../constants/parkingI18n'
 import { useParkingAdminPanels } from '../../features/parking/useParkingAdminPanels'
+import { useParkingRequestCounts } from '../../hooks/useParkingRequestCounts'
+import { useSystemLocale } from '../../hooks/useSystemLocale'
 import { cn } from '../../lib/cn'
 
 type SidebarItem = {
   activeIcon: string
-  badge?: number
+  badge?: string | number
   icon: string
   id: string
   label: string
@@ -48,7 +51,7 @@ function SidebarButton({
     <button
       aria-label={label}
       className={cn(
-        'flex h-12 items-center rounded-[10px] transition',
+        'relative flex h-12 items-center rounded-[10px] transition',
         'focus:outline-none focus:ring-2 focus:ring-primary/30',
         isActive ? 'bg-surface' : 'hover:bg-surface',
         isExpanded ? 'w-full gap-2' : 'w-12 justify-center',
@@ -73,8 +76,13 @@ function SidebarButton({
           {label}
         </span>
       )}
-      {isExpanded && badge ? (
-        <span className="flex size-6 shrink-0 items-center justify-center rounded-[5px] bg-primary text-sm leading-none text-white">
+      {badge ? (
+        <span
+          className={cn(
+            'flex size-6 shrink-0 items-center justify-center rounded-[5px] bg-primary text-sm leading-none text-white',
+            isExpanded ? 'ml-auto' : 'absolute -right-1 -top-1',
+          )}
+        >
           {badge}
         </span>
       ) : null}
@@ -84,10 +92,22 @@ function SidebarButton({
 
 export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const { activePanel, showAddParking, showParkingList } = useParkingAdminPanels()
+  const {
+    activePanel,
+    showAddParking,
+    showParkingList,
+    showRequests,
+  } = useParkingAdminPanels()
+  const locale = useSystemLocale()
+  const { requestCounts } = useParkingRequestCounts('')
   const displayEmail = userEmail ?? 'Example@mail.com'
   const isParkingSectionActive =
     activePanel === 'parking-details' || activePanel === 'parking-list'
+  const isRequestsSectionActive = activePanel === 'requests'
+  const pendingRequestsBadge =
+    requestCounts.pending > 0
+      ? formatCompactCount(requestCounts.pending, locale)
+      : undefined
   const navigationItems: SidebarItem[] = [
     {
       activeIcon: menuBlueIcon,
@@ -105,10 +125,11 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
     },
     {
       activeIcon: requestsBlueIcon,
-      badge: 1,
+      badge: pendingRequestsBadge,
       icon: requestsGrayIcon,
       id: 'requests',
       label: 'Requests',
+      onClick: showRequests,
     },
     {
       activeIcon: reviewsBlueIcon,
@@ -154,7 +175,8 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
               {...item}
               isActive={
                 (item.id === 'parking-list' && isParkingSectionActive) ||
-                (item.id === 'add-parking' && activePanel === 'add-parking')
+                (item.id === 'add-parking' && activePanel === 'add-parking') ||
+                (item.id === 'requests' && isRequestsSectionActive)
               }
               isExpanded={isExpanded}
             />
@@ -172,8 +194,10 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
             {...item}
             isActive={
               (item.id === 'parking-list' && isParkingSectionActive) ||
-              (item.id === 'add-parking' && activePanel === 'add-parking')
+              (item.id === 'add-parking' && activePanel === 'add-parking') ||
+              (item.id === 'requests' && isRequestsSectionActive)
             }
+            isExpanded={isExpanded}
           />
         ))}
         <button

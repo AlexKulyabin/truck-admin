@@ -15,6 +15,7 @@ import {
 } from '../features/parking/addParkingDraft'
 import { ParkingDetailsPanel } from '../features/parking/ParkingDetailsPanel'
 import { ParkingListPanel } from '../features/parking/ParkingListPanel'
+import { RequestsPanel } from '../features/parking/RequestsPanel'
 import { useParkingAdminPanels } from '../features/parking/useParkingAdminPanels'
 import { useSystemLocale } from '../hooks/useSystemLocale'
 import {
@@ -381,6 +382,14 @@ export function ParkingAdminPage() {
         {activePanel === 'parking-list' ? (
           <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-full max-w-[24.5rem]">
             <ParkingListPanel
+              onClose={closePanel}
+              onSelectParking={handleSelectParking}
+            />
+          </div>
+        ) : null}
+        {activePanel === 'requests' ? (
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-full max-w-[24.5rem]">
+            <RequestsPanel
               onClose={closePanel}
               onSelectParking={handleSelectParking}
             />

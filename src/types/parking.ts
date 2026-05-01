@@ -1,4 +1,5 @@
 import type { Tables, TablesInsert, TablesUpdate } from '../../types/supabase'
+import type { ParkingStatus } from '../constants/userStatuses'
 import type {
   AddParkingDraftPhoto,
   AddParkingServiceKey,
@@ -38,6 +39,10 @@ export type ParkingListItem = {
   latitude: number | null
   longitude: number | null
   rating: number | null
+}
+
+export type ParkingRequestItem = ParkingListItem & {
+  status: ParkingStatus
 }
 
 export type ParkingDetailItem = Pick<ParkingMapItem, 'address' | 'id' | 'rating'>

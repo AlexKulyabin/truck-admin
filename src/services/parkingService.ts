@@ -25,6 +25,7 @@ import type {
   ParkingInsert,
   ParkingPoint,
   ParkingRow,
+  ParkingRequestItem,
   ParkingUpdate,
   ParkingDetailRecord,
 } from '../types/parking'
@@ -55,6 +56,11 @@ type ParkingPointRow = {
 type ParkingListRow = Pick<
   ParkingRow,
   'address' | 'created_at' | 'id' | 'latitude' | 'longitude' | 'rating'
+>
+
+type ParkingRequestRow = Pick<
+  ParkingRow,
+  'address' | 'created_at' | 'id' | 'latitude' | 'longitude' | 'rating' | 'status'
 >
 
 type FilteredParkingResponseItem = {
@@ -279,6 +285,15 @@ function normalizeParkingListItem(parking: ParkingListRow): ParkingListItem {
   }
 }
 
+function normalizeParkingRequestItem(
+  parking: ParkingRequestRow,
+): ParkingRequestItem {
+  return {
+    ...normalizeParkingListItem(parking),
+    status: parking.status ?? 'pending',
+  }
+}
+
 function normalizeParkingAuthor(
   profile: Awaited<ReturnType<typeof getUserProfilePreview>>,
 ): ParkingAuthor {
@@ -390,6 +405,74 @@ export async function listParkingItems(searchQuery: string, signal?: AbortSignal
   return (data ?? []).map((parking) =>
     normalizeParkingListItem(parking as ParkingListRow),
   )
+}
+
+export async function listParkingRequests(
+  searchQuery: string,
+  signal?: AbortSignal,
+) {
+  const client = getSupabaseClient()
+  let query = client
+    .from(SUPABASE_TABLES.PARKINGS)
+    .select('id, address, created_at, latitude, longitude, rating, status')
+    .order('created_at', { ascending: false })
+
+  const normalizedQuery = searchQuery.trim()
+
+  if (normalizedQuery) {
+    query = query.ilike('address_lower', `%${normalizedQuery.toLowerCase()}%`)
+  }
+
+  const { data, error } = signal
+    ? await query.abortSignal(signal)
+    : await query
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []).map((parking) =>
+    normalizeParkingRequestItem(parking as ParkingRequestRow),
+  )
+}
+
+export async function countParkingRequestsByStatus(
+  searchQuery: string,
+  signal?: AbortSignal,
+) {
+  const client = getSupabaseClient()
+  const normalizedQuery = searchQuery.trim().toLowerCase()
+
+  async function countByStatus(
+    status: ParkingRequestRow['status'],
+  ): Promise<number> {
+    let query = client
+      .from(SUPABASE_TABLES.PARKINGS)
+      .select('id', { count: 'exact', head: true })
+      .eq('status', status)
+
+    if (normalizedQuery) {
+      query = query.ilike('address_lower', `%${normalizedQuery}%`)
+    }
+
+    const { count, error } = signal
+      ? await query.abortSignal(signal)
+      : await query
+
+    if (error) {
+      throw error
+    }
+
+    return count ?? 0
+  }
+
+  const [pending, approved, rejected] = await Promise.all([
+    countByStatus('pending'),
+    countByStatus('approved'),
+    countByStatus('rejected'),
+  ])
+
+  return { approved, pending, rejected }
 }
 
 export async function getParkingAuthor(
