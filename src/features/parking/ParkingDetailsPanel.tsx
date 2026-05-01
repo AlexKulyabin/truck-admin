@@ -13,12 +13,15 @@ import recreationAreaIcon from '../../assets/icons/recreation-area.svg'
 import shopIcon from '../../assets/icons/shop.svg'
 import showerIcon from '../../assets/icons/shower.svg'
 import trashIcon from '../../assets/icons/trash.svg'
+import { ParkingComplaintCard } from './ParkingComplaintCard'
 import { ParkingReviewCard } from './ParkingReviewCard'
 import { useParkingAuthor } from '../../hooks/useParkingAuthor'
+import { useParkingComplaints } from '../../hooks/useParkingComplaints'
 import { useParkingPhotos } from '../../hooks/useParkingPhotos'
 import { useParkingReviews } from '../../hooks/useParkingReviews'
 import { cn } from '../../lib/cn'
 import type {
+  ParkingComplaint,
   ParkingMapItem,
   ParkingPhoto,
   ParkingRatingSummary,
@@ -46,7 +49,6 @@ type ServiceItem = {
 
 type ParkingDetailModel = {
   capacity: number
-  complaintsCount: number
   ratingLabel: string
   services: ServiceItem[]
 }
@@ -80,14 +82,12 @@ function formatRating(value: number | null, fallbackSeed: number) {
 
 function buildParkingDetailModel(parking: ParkingMapItem): ParkingDetailModel {
   const seed = hashString(parking.id)
-  const complaintsCount = seed % 4
   const activeServices = ALL_SERVICES.filter((_, index) => {
     return ((seed >> index) & 1) === 1
   })
 
   return {
     capacity: 40 + (seed % 13) * 10,
-    complaintsCount,
     ratingLabel: formatRating(parking.rating, seed),
     services: activeServices.length >= 3 ? activeServices : ALL_SERVICES.slice(0, 4),
   }
@@ -136,7 +136,7 @@ function InfoCard({
         {title ? (
           <span
             className={cn(
-              'block truncate text-base font-medium text-text-primary',
+              'block truncate font-heading text-base font-medium text-text-primary',
               titleClassName,
             )}
           >
@@ -145,7 +145,7 @@ function InfoCard({
         ) : null}
         {subtitle ? (
           <span
-            className={cn('block text-sm text-text-secondary', subtitleClassName)}
+            className={cn('block font-heading text-sm text-text-secondary', subtitleClassName)}
           >
             {subtitle}
           </span>
@@ -169,7 +169,7 @@ function TabButton({
   return (
     <button
       className={cn(
-        'inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm transition',
+        'inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 font-heading text-sm transition',
         isActive
           ? 'bg-surface font-medium text-text-primary shadow-card'
           : 'font-normal text-text-secondary hover:bg-surface/70',
@@ -179,7 +179,7 @@ function TabButton({
     >
       <span>{label}</span>
       {typeof count === 'number' ? (
-        <span className="flex min-w-6 items-center justify-center rounded-md bg-surface px-2 py-0.5 text-xs font-medium text-primary shadow-card">
+        <span className="flex min-w-6 items-center justify-center rounded-md bg-surface px-2 py-0.5 font-heading text-xs font-medium text-primary shadow-card">
           {count}
         </span>
       ) : null}
@@ -213,7 +213,7 @@ function ReviewSummary({
         <div className="font-heading text-5xl leading-10 font-normal text-text-primary">
           {formatSummaryRating(summary.averageRating)}
         </div>
-        <div className="mt-2 whitespace-nowrap text-sm text-text-secondary">
+        <div className="mt-2 whitespace-nowrap font-heading text-sm font-normal text-text-secondary">
           {summary.reviewsCount} reviews
         </div>
       </div>
@@ -246,9 +246,9 @@ function ReviewsContent({
   reviews: ParkingReview[]
   summary: ParkingRatingSummary
 }) {
-  if (isLoading) {
+      if (isLoading) {
     return (
-      <div className="rounded-[10px] bg-surface px-4 py-5 text-sm text-text-secondary shadow-card">
+      <div className="rounded-[10px] bg-surface px-4 py-5 font-heading text-sm font-normal text-text-secondary shadow-card">
         Loading reviews...
       </div>
     )
@@ -259,12 +259,12 @@ function ReviewsContent({
       <ReviewSummary summary={summary} />
 
       <section className="space-y-4">
-        <h3 className="text-[20px] leading-[20px] font-medium text-text-primary">
+        <h3 className="font-heading text-[20px] leading-[20px] font-medium text-text-primary">
           All reviews
         </h3>
 
         {summary.reviewsCount === 0 ? (
-          <div className="rounded-[10px] bg-surface px-4 py-5 text-sm text-text-secondary shadow-card">
+          <div className="rounded-[10px] bg-surface px-4 py-5 font-heading text-sm font-normal text-text-secondary shadow-card">
             No reviews for this parking yet.
           </div>
         ) : (
@@ -288,7 +288,7 @@ function PhotosContent({
 }) {
   if (isLoading) {
     return (
-      <div className="rounded-[10px] bg-surface px-4 py-5 text-sm text-text-secondary shadow-card">
+      <div className="rounded-[10px] bg-surface px-4 py-5 font-heading text-sm font-normal text-text-secondary shadow-card">
         Loading photos...
       </div>
     )
@@ -296,22 +296,22 @@ function PhotosContent({
 
   if (photos.length === 0) {
     return (
-      <div className="rounded-[10px] bg-surface px-4 py-5 text-sm text-text-secondary shadow-card">
+      <div className="rounded-[10px] bg-surface px-4 py-5 font-heading text-sm font-normal text-text-secondary shadow-card">
         No photos for this parking yet.
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-3 gap-0.5 overflow-hidden">
       {photos.map((photo, index) => (
         <div
-          className="overflow-hidden rounded-[10px] bg-surface shadow-card"
+          className="aspect-square overflow-hidden bg-surface"
           key={photo.id}
         >
           <img
             alt={`Parking photo ${index + 1}`}
-            className="aspect-[4/3] w-full object-cover"
+            className="h-full w-full object-cover"
             src={photo.url}
           />
         </div>
@@ -320,30 +320,40 @@ function PhotosContent({
   )
 }
 
-function ComplaintsContent({ count }: { count: number }) {
-  if (count === 0) {
+function ComplaintsContent({
+  complaints,
+  isLoading,
+}: {
+  complaints: ParkingComplaint[]
+  isLoading: boolean
+}) {
+  if (isLoading) {
     return (
-      <div className="rounded-[10px] bg-surface px-4 py-5 text-sm text-text-secondary shadow-card">
-        No active complaints for this parking.
+      <div className="rounded-[10px] bg-surface px-4 py-5 font-heading text-sm font-normal text-text-secondary shadow-card">
+        Loading complaints...
       </div>
     )
   }
 
   return (
-    <div className="space-y-3">
-      {Array.from({ length: count }).map((_, index) => (
-        <div
-          className="rounded-[10px] bg-surface px-4 py-3 shadow-card"
-          key={`complaint-${index}`}
-        >
-          <div className="mb-1 text-sm font-medium text-text-primary">
-            Complaint #{index + 1}
+    <div className="space-y-4 py-2">
+      <section className="space-y-4">
+        <h3 className="px-4 font-heading text-base leading-5 font-medium text-text-primary">
+          All complaints
+        </h3>
+
+        {complaints.length === 0 ? (
+          <div className="rounded-[10px] bg-surface px-4 py-5 font-heading text-sm font-normal text-text-secondary shadow-card">
+            No complaints for this parking yet.
           </div>
-          <p className="m-0 text-sm text-text-secondary">
-            Access road needs attention after heavy traffic.
-          </p>
-        </div>
-      ))}
+        ) : (
+          <div className="space-y-4">
+            {complaints.map((complaint) => (
+              <ParkingComplaintCard complaint={complaint} key={complaint.id} />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   )
 }
@@ -363,13 +373,15 @@ export function ParkingDetailsPanel({
   })
   const tabsScrollRef = useRef<HTMLDivElement | null>(null)
   const { author, isLoading: isAuthorLoading } = useParkingAuthor(parking.id)
+  const { complaints, isLoading: isComplaintsLoading } =
+    useParkingComplaints(parking.id)
   const { isLoading: isPhotosLoading, photos } = useParkingPhotos(parking.id)
   const { isLoading: isReviewsLoading, reviews, summary: reviewSummary } =
     useParkingReviews(parking.id)
   const detail = buildParkingDetailModel(parking)
   const tabs = buildTabs(
     reviewSummary.reviewsCount,
-    detail.complaintsCount,
+    complaints.length,
     photos.length,
   )
   const title = parking.address ?? 'Unnamed parking'
@@ -579,7 +591,7 @@ export function ParkingDetailsPanel({
             />
 
             <section className="rounded-[10px] bg-surface px-4 py-4 shadow-card">
-              <h3 className="mb-3 text-base font-medium text-text-primary">
+              <h3 className="mb-3 font-heading text-base font-medium text-text-primary">
                 Additional services
               </h3>
               <div className="space-y-3">
@@ -591,7 +603,7 @@ export function ParkingDetailsPanel({
                       className="size-6"
                       src={service.icon}
                     />
-                    <span className="text-base text-text-primary">
+                    <span className="font-heading text-base font-normal text-text-primary">
                       {service.label}
                     </span>
                   </div>
@@ -612,7 +624,10 @@ export function ParkingDetailsPanel({
           <PhotosContent isLoading={isPhotosLoading} photos={photos} />
         ) : null}
         {activeTab === 'complaints' ? (
-          <ComplaintsContent count={detail.complaintsCount} />
+          <ComplaintsContent
+            complaints={complaints}
+            isLoading={isComplaintsLoading}
+          />
         ) : null}
       </div>
     </aside>

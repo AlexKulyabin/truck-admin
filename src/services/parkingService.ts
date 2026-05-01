@@ -4,6 +4,8 @@ import { getSupabaseClient } from '../lib/supabase'
 import { getUserProfilePreview } from './userService'
 import type {
   ParkingAuthor,
+  ParkingComplaint,
+  ParkingReportRow,
   CreateParkingPointInput,
   ParkingMapFilters,
   ParkingMapItem,
@@ -64,6 +66,16 @@ type ParkingReviewItem = Pick<
 >
 
 type ParkingReviewPhotoItem = Pick<ParkingPhotoRow, 'id' | 'review_id' | 'url'>
+type ParkingComplaintItem = Pick<
+  ParkingReportRow,
+  'comment' | 'created_at' | 'id' | 'report' | 'user_id'
+>
+
+const REPORT_LABELS: Record<string, string> = {
+  report1: 'Parking does not exist',
+  report2: 'A dangerous place',
+  report3: 'Another problem',
+}
 
 function normalizeParkingPoint(point: ParkingPointRow): ParkingPoint {
   if (point.latitude === null || point.longitude === null) {
@@ -344,6 +356,71 @@ export async function listParkingReviews(
       id: review.id,
       photos: photosByReviewId.get(review.id) ?? [],
       score: review.average_score,
+    }
+  })
+}
+
+export async function listParkingComplaints(
+  parkingId: string,
+  signal?: AbortSignal,
+) {
+  const client = getSupabaseClient()
+  const complaintsQuery = client
+    .from(SUPABASE_TABLES.REPORTS)
+    .select('id, created_at, comment, report, user_id')
+    .eq('parking_id', parkingId)
+    .order('created_at', { ascending: false })
+
+  const { data, error } = signal
+    ? await complaintsQuery.abortSignal(signal)
+    : await complaintsQuery
+
+  if (error) {
+    throw error
+  }
+
+  const complaints = (data ?? []) as ParkingComplaintItem[]
+  const userIds = Array.from(
+    new Set(
+      complaints
+        .map((complaint) => complaint.user_id)
+        .filter((userId): userId is string => Boolean(userId)),
+    ),
+  )
+  const usersById = new Map<string, Awaited<ReturnType<typeof getUserProfilePreview>>>()
+
+  if (userIds.length > 0) {
+    const usersQuery = client
+      .from(SUPABASE_TABLES.USERS)
+      .select('id, full_name, avatar_url')
+      .in('id', userIds)
+
+    const { data: usersData, error: usersError } = signal
+      ? await usersQuery.abortSignal(signal)
+      : await usersQuery
+
+    if (usersError) {
+      throw usersError
+    }
+
+    for (const user of usersData ?? []) {
+      usersById.set(user.id, user)
+    }
+  }
+
+  return complaints.map<ParkingComplaint>((complaint) => {
+    const complaintAuthor = complaint.user_id
+      ? usersById.get(complaint.user_id) ?? null
+      : null
+    const normalizedReport = complaint.report?.trim().toLowerCase() ?? null
+
+    return {
+      authorAvatarUrl: complaintAuthor?.avatar_url ?? null,
+      authorName: complaintAuthor?.full_name ?? null,
+      comment: complaint.comment?.trim() || null,
+      createdAt: complaint.created_at,
+      id: complaint.id,
+      reportLabel: normalizedReport ? REPORT_LABELS[normalizedReport] ?? complaint.report : null,
     }
   })
 }

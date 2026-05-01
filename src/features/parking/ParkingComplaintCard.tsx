@@ -1,13 +1,12 @@
-import { Star } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import type { ParkingReview } from '../../types/parking'
 import { cn } from '../../lib/cn'
+import type { ParkingComplaint } from '../../types/parking'
 
-type ParkingReviewCardProps = {
-  review: ParkingReview
+type ParkingComplaintCardProps = {
+  complaint: ParkingComplaint
 }
 
-function formatReviewDate(value: string) {
+function formatComplaintDate(value: string) {
   return new Intl.DateTimeFormat('ru-RU', {
     day: '2-digit',
     month: '2-digit',
@@ -15,37 +14,27 @@ function formatReviewDate(value: string) {
   }).format(new Date(value))
 }
 
-function renderStars(score: number) {
-  return Array.from({ length: 5 }).map((_, index) => {
-    const isFilled = index < score
-
-    return (
-      <Star
-        className={cn('size-4', isFilled ? 'fill-warning text-warning' : 'text-border')}
-        key={`star-${index}`}
-      />
-    )
-  })
-}
-
-export function ParkingReviewCard({ review }: ParkingReviewCardProps) {
+export function ParkingComplaintCard({ complaint }: ParkingComplaintCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const reviewScore = Math.max(1, Math.min(5, Math.round(review.score ?? 0)))
   const authorName =
-    review.authorName?.trim() ||
+    complaint.authorName?.trim() ||
     '\u0423\u0434\u0430\u043b\u0435\u043d\u043d\u044b\u0439 \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044c'
   const authorInitial = authorName.charAt(0).toUpperCase()
-  const formattedDate = useMemo(() => formatReviewDate(review.createdAt), [review.createdAt])
-  const hasLongComment = (review.comment?.trim().length ?? 0) > 180
+  const formattedDate = useMemo(
+    () => formatComplaintDate(complaint.createdAt),
+    [complaint.createdAt],
+  )
+  const hasLongComment = (complaint.comment?.trim().length ?? 0) > 180
+  const reportLabel = complaint.reportLabel?.trim() || null
 
   return (
     <article className="space-y-3 py-1">
-      <div className="flex items-start gap-4">
-        {review.authorAvatarUrl ? (
+      <div className="flex items-start gap-4 px-4 py-1">
+        {complaint.authorAvatarUrl ? (
           <img
             alt={authorName}
             className="size-10 shrink-0 rounded-full object-cover"
-            src={review.authorAvatarUrl}
+            src={complaint.authorAvatarUrl}
           />
         ) : (
           <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#E6DBFF] font-heading text-base font-medium text-[#5B41A8]">
@@ -57,17 +46,16 @@ export function ParkingReviewCard({ review }: ParkingReviewCardProps) {
           <div className="font-heading text-base leading-6 font-normal text-text-primary">
             {authorName}
           </div>
-
-          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
-            <div className="flex items-center gap-0.5">
-              {renderStars(reviewScore)}
-            </div>
-            <span className="font-heading text-xs font-normal text-text-secondary">
-              {formattedDate}
-            </span>
+          <div className="font-heading text-xs font-normal text-text-secondary">
+            {formattedDate}
           </div>
+          {reportLabel ? (
+            <div className="font-heading text-sm leading-5 font-medium text-text-primary">
+              {reportLabel}
+            </div>
+          ) : null}
 
-          {review.comment ? (
+          {complaint.comment ? (
             <div className="space-y-2">
               <p
                 className={cn(
@@ -76,7 +64,7 @@ export function ParkingReviewCard({ review }: ParkingReviewCardProps) {
                     '[display:-webkit-box] overflow-hidden [-webkit-box-orient:vertical] [-webkit-line-clamp:4]',
                 )}
               >
-                {review.comment}
+                {complaint.comment}
               </p>
               {hasLongComment ? (
                 <button
@@ -87,20 +75,6 @@ export function ParkingReviewCard({ review }: ParkingReviewCardProps) {
                   {isExpanded ? 'Read less' : 'Read more'}
                 </button>
               ) : null}
-            </div>
-          ) : null}
-
-          {review.photos.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-1">
-              {review.photos.map((photo) => (
-                <img
-                  alt=""
-                  aria-hidden="true"
-                  className="size-16 rounded-xl object-cover"
-                  key={photo.id}
-                  src={photo.url}
-                />
-              ))}
             </div>
           ) : null}
         </div>
