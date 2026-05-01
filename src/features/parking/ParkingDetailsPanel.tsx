@@ -554,7 +554,7 @@ export function ParkingDetailsPanel({
 
   return (
     <aside className="pointer-events-auto flex h-full w-full max-w-[28rem] flex-col overflow-hidden rounded-none bg-surface-muted shadow-[0_16px_40px_rgb(0_0_0_/_0.08)] md:max-w-[28rem] md:border-r md:border-border">
-      <div className="relative">
+      <div className="relative isolate pointer-events-auto">
         {activeHeroPhoto ? (
           <img
             alt={title}
@@ -583,18 +583,16 @@ export function ParkingDetailsPanel({
           <>
             <button
               aria-label={messages.photo}
-              className="absolute left-5 top-1/2 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface/92 text-text-primary shadow-card transition hover:bg-surface active:scale-95"
+              className="absolute left-5 top-1/2 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface/92 text-text-primary shadow-card transition hover:bg-surface active:scale-95 pointer-events-auto cursor-pointer"
               onClick={goToPreviousPhoto}
-              onMouseDown={(event) => event.preventDefault()}
               type="button"
             >
               <img alt="" aria-hidden="true" className="size-5" src={arrowIcon} />
             </button>
             <button
               aria-label={messages.photo}
-              className="absolute right-5 top-1/2 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface/92 text-text-primary shadow-card transition hover:bg-surface active:scale-95"
+              className="absolute right-5 top-1/2 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface/92 text-text-primary shadow-card transition hover:bg-surface active:scale-95 pointer-events-auto cursor-pointer"
               onClick={goToNextPhoto}
-              onMouseDown={(event) => event.preventDefault()}
               type="button"
             >
               <img
@@ -604,17 +602,16 @@ export function ParkingDetailsPanel({
                 src={arrowIcon}
               />
             </button>
-            <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/25 px-3 py-1.5 backdrop-blur-sm">
+            <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/25 px-3 py-1.5 backdrop-blur-sm pointer-events-auto">
               {heroPhotos.map((photo, index) => (
                 <button
                   aria-label={`${messages.photo} ${index + 1}`}
                   className={cn(
-                    'size-2.5 rounded-full transition',
+                    'size-2.5 rounded-full transition pointer-events-auto cursor-pointer',
                     index === currentPhotoIndex ? 'bg-white' : 'bg-white/45',
                   )}
                   key={photo.id}
                   onClick={() => setActivePhotoIndex(index)}
-                  onMouseDown={(event) => event.preventDefault()}
                   type="button"
                 />
               ))}
@@ -622,7 +619,7 @@ export function ParkingDetailsPanel({
           </>
         ) : null}
         {isPhotosLoading ? (
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/40 to-transparent px-5 py-4 text-sm text-white">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/40 to-transparent px-5 py-4 text-sm text-white">
             {messages.loadingPhotos}
           </div>
         ) : null}
