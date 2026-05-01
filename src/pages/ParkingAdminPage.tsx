@@ -1,18 +1,25 @@
+import { useState } from 'react'
 import { ParkingMap } from '../components/maps/ParkingMap'
-import { ParkingForm } from '../features/parking/ParkingForm'
-import { useParkingPoints } from '../hooks/useParkingPoints'
+import { ParkingDetailsPanel } from '../features/parking/ParkingDetailsPanel'
+import type { ParkingMapItem } from '../types/parking'
 
 export function ParkingAdminPage() {
-  const { addParkingPoint, error, isLoading } = useParkingPoints()
+  const [selectedParking, setSelectedParking] = useState<ParkingMapItem | null>(
+    null,
+  )
 
   return (
-    <div className="grid min-h-screen gap-4 p-4 lg:grid-cols-[380px_minmax(0,1fr)]">
-      <ParkingForm
-        error={error}
-        isLoading={isLoading}
-        onCreateParkingPoint={addParkingPoint}
-      />
-      <ParkingMap />
+    <div className="relative min-h-screen bg-background">
+      <ParkingMap onSelectParking={setSelectedParking} />
+      {selectedParking ? (
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-full max-w-[28rem]">
+          <ParkingDetailsPanel
+            onClose={() => setSelectedParking(null)}
+            parking={selectedParking}
+            key={selectedParking.id}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }

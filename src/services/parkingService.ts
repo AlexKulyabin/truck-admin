@@ -1,13 +1,21 @@
 import { SUPABASE_TABLES } from '../constants/supabaseTables'
 import { PARKING_STATUSES } from '../constants/userStatuses'
 import { getSupabaseClient } from '../lib/supabase'
+import { getUserProfilePreview } from './userService'
 import type {
+  ParkingAuthor,
   CreateParkingPointInput,
   ParkingMapFilters,
   ParkingMapItem,
+  ParkingPhoto,
+  ParkingPhotoRow,
+  ParkingRatingSummary,
+  ParkingReview,
+  ParkingReviewRow,
   ParkingMapRequest,
   ParkingInsert,
   ParkingPoint,
+  ParkingRow,
 } from '../types/parking'
 
 const DEFAULT_MAP_FILTERS: ParkingMapFilters = {
@@ -40,6 +48,22 @@ type FilteredParkingResponseItem = {
   lng?: unknown
   rating?: unknown
 }
+
+type ParkingPhotoItem = Pick<ParkingPhotoRow, 'id' | 'url'>
+
+type ParkingAuthorRow = Pick<ParkingRow, 'created_by'>
+
+type ParkingReviewSummaryRow = Pick<
+  ParkingRow,
+  'rating' | 'reviews_count' | 'stars_1' | 'stars_2' | 'stars_3' | 'stars_4' | 'stars_5'
+>
+
+type ParkingReviewItem = Pick<
+  ParkingReviewRow,
+  'average_score' | 'comment' | 'created_at' | 'id' | 'user_id'
+>
+
+type ParkingReviewPhotoItem = Pick<ParkingPhotoRow, 'id' | 'review_id' | 'url'>
 
 function normalizeParkingPoint(point: ParkingPointRow): ParkingPoint {
   if (point.latitude === null || point.longitude === null) {
@@ -88,6 +112,38 @@ function normalizeFilteredParkingItem(value: unknown): ParkingMapItem | null {
   }
 }
 
+function normalizeParkingPhoto(photo: ParkingPhotoItem): ParkingPhoto {
+  return {
+    id: photo.id,
+    url: photo.url,
+  }
+}
+
+function normalizeParkingAuthor(
+  profile: Awaited<ReturnType<typeof getUserProfilePreview>>,
+): ParkingAuthor {
+  return {
+    avatarUrl: profile?.avatar_url ?? null,
+    fullName: profile?.full_name ?? null,
+  }
+}
+
+function normalizeParkingReviewSummary(
+  reviewSummary: ParkingReviewSummaryRow | null,
+): ParkingRatingSummary {
+  return {
+    averageRating: reviewSummary?.rating ?? null,
+    reviewsCount: reviewSummary?.reviews_count ?? 0,
+    starCounts: {
+      1: reviewSummary?.stars_1 ?? 0,
+      2: reviewSummary?.stars_2 ?? 0,
+      3: reviewSummary?.stars_3 ?? 0,
+      4: reviewSummary?.stars_4 ?? 0,
+      5: reviewSummary?.stars_5 ?? 0,
+    },
+  }
+}
+
 export async function listFilteredParkingMapItems(
   request: ParkingMapRequest,
   signal?: AbortSignal,
@@ -126,6 +182,170 @@ export async function listFilteredParkingMapItems(
   return (data || [])
     .map(normalizeFilteredParkingItem)
     .filter((item): item is ParkingMapItem => item !== null)
+}
+
+export async function listParkingPhotos(
+  parkingId: string,
+  signal?: AbortSignal,
+) {
+  const client = getSupabaseClient()
+  const query = client
+    .from(SUPABASE_TABLES.PARKING_PHOTOS)
+    .select('id, url')
+    .eq('parking_id', parkingId)
+    .order('created_at', { ascending: true })
+
+  const { data, error } = signal
+    ? await query.abortSignal(signal)
+    : await query
+
+  if (error) {
+    throw error
+  }
+
+  return (data || []).map(normalizeParkingPhoto)
+}
+
+export async function getParkingAuthor(
+  parkingId: string,
+  _signal?: AbortSignal,
+) {
+  const client = getSupabaseClient()
+  const { data, error } = await client
+    .from(SUPABASE_TABLES.PARKINGS)
+    .select('created_by')
+    .eq('id', parkingId)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  const parkingAuthor = data as ParkingAuthorRow | null
+
+  if (!parkingAuthor?.created_by) {
+    return normalizeParkingAuthor(null)
+  }
+
+  const profile = await getUserProfilePreview(parkingAuthor.created_by)
+  return normalizeParkingAuthor(profile)
+}
+
+export async function getParkingReviewSummary(
+  parkingId: string,
+  signal?: AbortSignal,
+) {
+  const client = getSupabaseClient()
+  const query = client
+    .from(SUPABASE_TABLES.PARKINGS)
+    .select('rating, reviews_count, stars_1, stars_2, stars_3, stars_4, stars_5')
+    .eq('id', parkingId)
+    .limit(1)
+
+  const { data, error } = signal
+    ? await query.abortSignal(signal)
+    : await query
+
+  if (error) {
+    throw error
+  }
+
+  return normalizeParkingReviewSummary((data?.[0] ?? null) as ParkingReviewSummaryRow | null)
+}
+
+export async function listParkingReviews(
+  parkingId: string,
+  signal?: AbortSignal,
+) {
+  const client = getSupabaseClient()
+  const reviewsQuery = client
+    .from(SUPABASE_TABLES.REVIEWS)
+    .select('id, created_at, average_score, comment, user_id')
+    .eq('parking_id', parkingId)
+    .order('created_at', { ascending: false })
+
+  const photosQuery = client
+    .from(SUPABASE_TABLES.PARKING_PHOTOS)
+    .select('id, review_id, url')
+    .eq('parking_id', parkingId)
+    .not('review_id', 'is', null)
+    .order('created_at', { ascending: true })
+
+  const [{ data: reviewsData, error: reviewsError }, { data: photosData, error: photosError }] =
+    signal
+      ? await Promise.all([
+          reviewsQuery.abortSignal(signal),
+          photosQuery.abortSignal(signal),
+        ])
+      : await Promise.all([reviewsQuery, photosQuery])
+
+  if (reviewsError) {
+    throw reviewsError
+  }
+
+  if (photosError) {
+    throw photosError
+  }
+
+  const reviews = (reviewsData ?? []) as ParkingReviewItem[]
+  const reviewPhotos = (photosData ?? []) as ParkingReviewPhotoItem[]
+  const photosByReviewId = new Map<number, ParkingPhoto[]>()
+
+  reviewPhotos.forEach((photo) => {
+    if (photo.review_id === null) {
+      return
+    }
+
+    const currentPhotos = photosByReviewId.get(photo.review_id) ?? []
+    currentPhotos.push({
+      id: photo.id,
+      url: photo.url,
+    })
+    photosByReviewId.set(photo.review_id, currentPhotos)
+  })
+
+  const userIds = Array.from(
+    new Set(
+      reviews
+        .map((review) => review.user_id)
+        .filter((userId): userId is string => Boolean(userId)),
+    ),
+  )
+
+  const usersById = new Map<string, Awaited<ReturnType<typeof getUserProfilePreview>>>()
+
+  if (userIds.length > 0) {
+    const usersQuery = client
+      .from(SUPABASE_TABLES.USERS)
+      .select('id, full_name, avatar_url')
+      .in('id', userIds)
+
+    const { data: usersData, error: usersError } = signal
+      ? await usersQuery.abortSignal(signal)
+      : await usersQuery
+
+    if (usersError) {
+      throw usersError
+    }
+
+    for (const user of usersData ?? []) {
+      usersById.set(user.id, user)
+    }
+  }
+
+  return reviews.map<ParkingReview>((review) => {
+    const reviewAuthor = review.user_id ? usersById.get(review.user_id) ?? null : null
+
+    return {
+      authorAvatarUrl: reviewAuthor?.avatar_url ?? null,
+      authorName: reviewAuthor?.full_name ?? null,
+      comment: review.comment,
+      createdAt: review.created_at,
+      id: review.id,
+      photos: photosByReviewId.get(review.id) ?? [],
+      score: review.average_score,
+    }
+  })
 }
 
 export async function createParkingPoint(parkingPoint: CreateParkingPointInput) {

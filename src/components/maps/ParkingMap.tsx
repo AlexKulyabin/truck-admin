@@ -11,6 +11,10 @@ import markerIcon from '../../assets/icons/marker.svg'
 import { useParkingMapItems } from '../../hooks/useParkingMapItems'
 import type { ParkingMapItem } from '../../types/parking'
 
+type ParkingMapProps = {
+  onSelectParking?: (_parking: ParkingMapItem) => void
+}
+
 const MARKER_SIZE = {
   height: 44,
   width: 35,
@@ -61,7 +65,7 @@ function getMapRequest(map: google.maps.Map) {
   }
 }
 
-function ParkingMarkerLayer() {
+function ParkingMarkerLayer({ onSelectParking }: ParkingMapProps) {
   const map = useMap()
   const idleDebounceRef = useRef<ReturnType<typeof window.setTimeout> | null>(
     null,
@@ -156,9 +160,11 @@ function ParkingMarkerLayer() {
 
       if (item.isCluster) {
         currentMap.setZoom((currentMap.getZoom() ?? mapsConfig.defaultZoom) + 2)
+      } else {
+        onSelectParking?.(item)
       }
     }
-  }, [map, parkingItems])
+  }, [map, onSelectParking, parkingItems])
 
   if (!error && !isLoading) {
     return null
@@ -171,7 +177,7 @@ function ParkingMarkerLayer() {
   )
 }
 
-export function ParkingMap() {
+export function ParkingMap({ onSelectParking }: ParkingMapProps) {
   if (!mapsConfig.apiKey) {
     return (
       <section className="flex min-h-[520px] items-center justify-center rounded-lg border border-dashed border-form-border bg-surface p-6 text-center">
@@ -199,7 +205,7 @@ export function ParkingMap() {
           gestureHandling="greedy"
           mapId="truck-admin-parking-map"
         >
-          <ParkingMarkerLayer />
+          <ParkingMarkerLayer onSelectParking={onSelectParking} />
         </Map>
       </APIProvider>
     </section>

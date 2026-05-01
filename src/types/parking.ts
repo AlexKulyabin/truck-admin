@@ -2,6 +2,8 @@ import type { Tables, TablesInsert } from '../../types/supabase'
 
 export type ParkingRow = Tables<'parkings'>
 export type ParkingInsert = TablesInsert<'parkings'>
+export type ParkingPhotoRow = Tables<'parking_photos'>
+export type ParkingReviewRow = Tables<'reviews'>
 
 export type ParkingPoint = {
   id: string
@@ -20,6 +22,32 @@ export type ParkingMapItem = {
   latitude: number
   longitude: number
   rating: number | null
+}
+
+export type ParkingPhoto = {
+  id: string
+  url: string
+}
+
+export type ParkingAuthor = {
+  avatarUrl: string | null
+  fullName: string | null
+}
+
+export type ParkingRatingSummary = {
+  averageRating: number | null
+  reviewsCount: number
+  starCounts: Record<1 | 2 | 3 | 4 | 5, number>
+}
+
+export type ParkingReview = {
+  authorAvatarUrl: string | null
+  authorName: string | null
+  comment: string | null
+  createdAt: string
+  id: number
+  photos: ParkingPhoto[]
+  score: number | null
 }
 
 export type ParkingMapBounds = {

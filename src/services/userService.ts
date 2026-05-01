@@ -11,6 +11,8 @@ type WaitForUserProfileOptions = {
   delayMs?: number
 }
 
+type UserProfilePreview = Pick<UserProfile, 'avatar_url' | 'full_name'>
+
 function normalizeUserProfile(profile: UserProfile): UserProfile {
   return {
     ...profile,
@@ -31,6 +33,24 @@ export async function getUserProfile(userId: string) {
   }
 
   return normalizeUserProfile(data as UserProfile)
+}
+
+export async function getUserProfilePreview(
+  userId: string,
+  _signal?: AbortSignal,
+) {
+  const client = getSupabaseClient()
+  const { data, error } = await client
+    .from(SUPABASE_TABLES.USERS)
+    .select('full_name, avatar_url')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? null) as UserProfilePreview | null
 }
 
 export async function waitForUserProfile(

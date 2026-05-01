@@ -97,7 +97,7 @@ function SidebarButton({
         />
       </span>
       {isExpanded && (
-        <span className="min-w-0 flex-1 truncate text-left text-base font-medium text-text-primary">
+        <span className="min-w-0 flex-1 truncate text-left font-heading text-[16px] leading-[16px] font-medium text-text-primary">
           {label}
         </span>
       )}
@@ -119,7 +119,7 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
       className={cn(
         'flex border-t border-border bg-surface-muted shadow-card transition-[width] duration-200',
         'md:min-h-screen md:flex-col md:justify-between md:border-r md:border-t-0 md:py-6 md:pl-6 md:pr-2',
-        isExpanded ? 'md:w-60' : 'md:w-24',
+        isExpanded ? 'md:w-72' : 'md:w-24',
       )}
       onClick={() => setIsExpanded((currentValue) => !currentValue)}
     >
@@ -137,7 +137,7 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
         >
           <img alt="Truck Admin" className="size-[61px] shrink-0" src={logo} />
           {isExpanded && (
-            <span className="text-xl font-medium text-text-primary">
+            <span className="whitespace-nowrap font-heading text-[20px] leading-[20px] font-medium text-text-primary">
               JS TRUCKPARK
             </span>
           )}
