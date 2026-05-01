@@ -7,6 +7,7 @@ import type {
   ParkingComplaint,
   ParkingReportRow,
   CreateParkingPointInput,
+  ParkingListItem,
   ParkingMapFilters,
   ParkingMapItem,
   ParkingPhoto,
@@ -40,6 +41,11 @@ type ParkingPointRow = {
   longitude: number | null
   total_spaces: number | null
 }
+
+type ParkingListRow = Pick<
+  ParkingRow,
+  'address' | 'created_at' | 'id' | 'latitude' | 'longitude' | 'rating'
+>
 
 type FilteredParkingResponseItem = {
   address?: unknown
@@ -131,6 +137,17 @@ function normalizeParkingPhoto(photo: ParkingPhotoItem): ParkingPhoto {
   }
 }
 
+function normalizeParkingListItem(parking: ParkingListRow): ParkingListItem {
+  return {
+    address: parking.address,
+    createdAt: parking.created_at,
+    id: parking.id,
+    latitude: parking.latitude,
+    longitude: parking.longitude,
+    rating: parking.rating,
+  }
+}
+
 function normalizeParkingAuthor(
   profile: Awaited<ReturnType<typeof getUserProfilePreview>>,
 ): ParkingAuthor {
@@ -216,6 +233,32 @@ export async function listParkingPhotos(
   }
 
   return (data || []).map(normalizeParkingPhoto)
+}
+
+export async function listParkingItems(searchQuery: string, signal?: AbortSignal) {
+  const client = getSupabaseClient()
+  let query = client
+    .from(SUPABASE_TABLES.PARKINGS)
+    .select('id, address, created_at, latitude, longitude, rating')
+    .order('created_at', { ascending: false })
+
+  const normalizedQuery = searchQuery.trim()
+
+  if (normalizedQuery) {
+    query = query.ilike('address_lower', `%${normalizedQuery.toLowerCase()}%`)
+  }
+
+  const { data, error } = signal
+    ? await query.abortSignal(signal)
+    : await query
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []).map((parking) =>
+    normalizeParkingListItem(parking as ParkingListRow),
+  )
 }
 
 export async function getParkingAuthor(

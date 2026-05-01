@@ -12,6 +12,10 @@ import { useParkingMapItems } from '../../hooks/useParkingMapItems'
 import type { ParkingMapItem } from '../../types/parking'
 
 type ParkingMapProps = {
+  focusedParking?: {
+    latitude: number | null
+    longitude: number | null
+  } | null
   onSelectParking?: (_parking: ParkingMapItem) => void
 }
 
@@ -177,7 +181,32 @@ function ParkingMarkerLayer({ onSelectParking }: ParkingMapProps) {
   )
 }
 
-export function ParkingMap({ onSelectParking }: ParkingMapProps) {
+function ParkingFocusController({
+  focusedParking,
+}: Pick<ParkingMapProps, 'focusedParking'>) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (
+      !map ||
+      focusedParking?.latitude === null ||
+      focusedParking?.latitude === undefined ||
+      focusedParking?.longitude === null ||
+      focusedParking?.longitude === undefined
+    ) {
+      return
+    }
+
+    map.panTo({
+      lat: focusedParking.latitude,
+      lng: focusedParking.longitude,
+    })
+  }, [focusedParking, map])
+
+  return null
+}
+
+export function ParkingMap({ focusedParking, onSelectParking }: ParkingMapProps) {
   if (!mapsConfig.apiKey) {
     return (
       <section className="flex min-h-[520px] items-center justify-center rounded-lg border border-dashed border-form-border bg-surface p-6 text-center">
@@ -205,6 +234,7 @@ export function ParkingMap({ onSelectParking }: ParkingMapProps) {
           gestureHandling="greedy"
           mapId="truck-admin-parking-map"
         >
+          <ParkingFocusController focusedParking={focusedParking} />
           <ParkingMarkerLayer onSelectParking={onSelectParking} />
         </Map>
       </APIProvider>

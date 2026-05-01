@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { getParkingMessages, type SupportedLocale } from '../../constants/parkingI18n'
+import { useSystemLocale } from '../../hooks/useSystemLocale'
 import { cn } from '../../lib/cn'
 import type { ParkingComplaint } from '../../types/parking'
 
@@ -6,8 +8,8 @@ type ParkingComplaintCardProps = {
   complaint: ParkingComplaint
 }
 
-function formatComplaintDate(value: string) {
-  return new Intl.DateTimeFormat('ru-RU', {
+function formatComplaintDate(value: string, locale: SupportedLocale) {
+  return new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en-US', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -15,14 +17,14 @@ function formatComplaintDate(value: string) {
 }
 
 export function ParkingComplaintCard({ complaint }: ParkingComplaintCardProps) {
+  const locale = useSystemLocale()
+  const messages = getParkingMessages(locale)
   const [isExpanded, setIsExpanded] = useState(false)
-  const authorName =
-    complaint.authorName?.trim() ||
-    '\u0423\u0434\u0430\u043b\u0435\u043d\u043d\u044b\u0439 \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044c'
+  const authorName = complaint.authorName?.trim() || messages.anonymousUser
   const authorInitial = authorName.charAt(0).toUpperCase()
   const formattedDate = useMemo(
-    () => formatComplaintDate(complaint.createdAt),
-    [complaint.createdAt],
+    () => formatComplaintDate(complaint.createdAt, locale),
+    [complaint.createdAt, locale],
   )
   const hasLongComment = (complaint.comment?.trim().length ?? 0) > 180
   const reportLabel = complaint.reportLabel?.trim() || null
@@ -72,7 +74,7 @@ export function ParkingComplaintCard({ complaint }: ParkingComplaintCardProps) {
                   onClick={() => setIsExpanded((currentValue) => !currentValue)}
                   type="button"
                 >
-                  {isExpanded ? 'Read less' : 'Read more'}
+                  {isExpanded ? messages.readLess : messages.readMore}
                 </button>
               ) : null}
             </div>
@@ -85,13 +87,13 @@ export function ParkingComplaintCard({ complaint }: ParkingComplaintCardProps) {
           className="flex h-12 flex-1 items-center justify-center rounded-xl bg-surface font-heading text-sm leading-5 font-medium text-text-primary transition hover:bg-surface-muted"
           type="button"
         >
-          Delete
+          {messages.delete}
         </button>
         <button
           className="flex h-12 flex-1 items-center justify-center rounded-xl bg-primary font-heading text-sm leading-5 font-medium text-white transition hover:bg-primary-dark"
           type="button"
         >
-          More detailed
+          {messages.details}
         </button>
       </div>
     </article>

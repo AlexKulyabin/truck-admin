@@ -2,6 +2,7 @@ import type { PropsWithChildren } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppSidebar } from '../components/layout/AppSidebar'
 import { useAuth } from '../features/auth/useAuth'
+import { ParkingAdminPanelsProvider } from '../features/parking/ParkingAdminPanelsProvider'
 
 export function AppShell({ children }: PropsWithChildren) {
   const navigate = useNavigate()
@@ -13,9 +14,11 @@ export function AppShell({ children }: PropsWithChildren) {
   }
 
   return (
-    <div className="grid min-h-screen bg-background md:grid-cols-[auto_minmax(0,1fr)]">
-      <AppSidebar onLogout={handleLogout} userEmail={user?.email} />
-      <main className="min-w-0 md:order-none">{children}</main>
-    </div>
+    <ParkingAdminPanelsProvider>
+      <div className="grid min-h-screen bg-background md:grid-cols-[auto_minmax(0,1fr)]">
+        <AppSidebar onLogout={handleLogout} userEmail={user?.email} />
+        <main className="min-w-0 md:order-none">{children}</main>
+      </div>
+    </ParkingAdminPanelsProvider>
   )
 }

@@ -1,6 +1,5 @@
-import { Star } from 'lucide-react'
+import { CameraOff, Star } from 'lucide-react'
 import { useMemo, useRef, useState, type PointerEvent } from 'react'
-import parkingDetailHero from '../../assets/parking-detail-hero.svg'
 import arrowIcon from '../../assets/icons/arrow.svg'
 import capasityIcon from '../../assets/icons/capasity.svg'
 import editIcon from '../../assets/icons/edit.svg'
@@ -13,16 +12,23 @@ import recreationAreaIcon from '../../assets/icons/recreation-area.svg'
 import shopIcon from '../../assets/icons/shop.svg'
 import showerIcon from '../../assets/icons/shower.svg'
 import trashIcon from '../../assets/icons/trash.svg'
+import {
+  formatSpotsCount,
+  formatReviewCount,
+  getParkingMessages,
+  type SupportedLocale,
+} from '../../constants/parkingI18n'
 import { ParkingComplaintCard } from './ParkingComplaintCard'
 import { ParkingReviewCard } from './ParkingReviewCard'
 import { useParkingAuthor } from '../../hooks/useParkingAuthor'
 import { useParkingComplaints } from '../../hooks/useParkingComplaints'
 import { useParkingPhotos } from '../../hooks/useParkingPhotos'
 import { useParkingReviews } from '../../hooks/useParkingReviews'
+import { useSystemLocale } from '../../hooks/useSystemLocale'
 import { cn } from '../../lib/cn'
 import type {
   ParkingComplaint,
-  ParkingMapItem,
+  ParkingDetailItem,
   ParkingPhoto,
   ParkingRatingSummary,
   ParkingReview,
@@ -30,7 +36,7 @@ import type {
 
 type ParkingDetailsPanelProps = {
   onClose: () => void
-  parking: ParkingMapItem
+  parking: ParkingDetailItem
 }
 
 type DetailTabId = 'complaints' | 'info' | 'photo' | 'reviews'
@@ -44,7 +50,6 @@ type DetailTab = {
 type ServiceItem = {
   icon: string
   id: string
-  label: string
 }
 
 type ParkingDetailModel = {
@@ -54,12 +59,12 @@ type ParkingDetailModel = {
 }
 
 const ALL_SERVICES: ServiceItem[] = [
-  { icon: gasStationIcon, id: 'gas', label: 'Gas station' },
-  { icon: showerIcon, id: 'shower', label: 'Shower' },
-  { icon: laundryIcon, id: 'laundry', label: 'Laundry' },
-  { icon: hotelIcon, id: 'hotel', label: 'Hotel' },
-  { icon: shopIcon, id: 'shop', label: 'Shop' },
-  { icon: recreationAreaIcon, id: 'recreation', label: 'Recreation area' },
+  { icon: gasStationIcon, id: 'gas' },
+  { icon: showerIcon, id: 'shower' },
+  { icon: laundryIcon, id: 'laundry' },
+  { icon: hotelIcon, id: 'hotel' },
+  { icon: shopIcon, id: 'shop' },
+  { icon: recreationAreaIcon, id: 'recreation' },
 ]
 
 function hashString(value: string) {
@@ -80,7 +85,7 @@ function formatRating(value: number | null, fallbackSeed: number) {
   return (4 + (fallbackSeed % 11) / 10).toFixed(1)
 }
 
-function buildParkingDetailModel(parking: ParkingMapItem): ParkingDetailModel {
+function buildParkingDetailModel(parking: ParkingDetailItem): ParkingDetailModel {
   const seed = hashString(parking.id)
   const activeServices = ALL_SERVICES.filter((_, index) => {
     return ((seed >> index) & 1) === 1
@@ -93,21 +98,55 @@ function buildParkingDetailModel(parking: ParkingMapItem): ParkingDetailModel {
   }
 }
 
-function buildTabs(reviewCount: number, complaintsCount: number, photosCount: number): DetailTab[] {
+function buildLocalizedTabs(
+  reviewCount: number,
+  complaintsCount: number,
+  photosCount: number,
+  locale: SupportedLocale,
+): DetailTab[] {
+  const messages = getParkingMessages(locale)
+
   return [
-    { id: 'info', label: 'Info' },
-    { count: reviewCount, id: 'reviews', label: 'Reviews' },
-    { count: photosCount, id: 'photo', label: 'Photo' },
-    { count: complaintsCount, id: 'complaints', label: 'Complaints' },
+    { id: 'info', label: messages.info },
+    { count: reviewCount, id: 'reviews', label: messages.reviews },
+    { count: photosCount, id: 'photo', label: messages.photo },
+    { count: complaintsCount, id: 'complaints', label: messages.complaints },
   ]
 }
 
-function formatSummaryRating(value: number | null) {
+function getLocalizedServiceLabel(serviceId: string, locale: SupportedLocale) {
+  const labels = {
+    en: {
+      gas: 'Gas station',
+      hotel: 'Hotel',
+      laundry: 'Laundry',
+      recreation: 'Recreation area',
+      shop: 'Shop',
+      shower: 'Shower',
+    },
+    ru: {
+      gas: 'Заправка',
+      hotel: 'Отель',
+      laundry: 'Прачечная',
+      recreation: 'Зона отдыха',
+      shop: 'Магазин',
+      shower: 'Душ',
+    },
+  } as const
+
+  const localizedLabels = labels[locale]
+  return localizedLabels[serviceId as keyof typeof localizedLabels] ?? serviceId
+}
+
+function formatSummaryRating(value: number | null, locale: SupportedLocale) {
   if (typeof value !== 'number' || Number.isNaN(value)) {
-    return '0,0'
+    return locale === 'ru' ? '0,0' : '0.0'
   }
 
-  return value.toFixed(1).replace('.', ',')
+  return value.toLocaleString(locale === 'ru' ? 'ru-RU' : 'en-US', {
+    maximumFractionDigits: 1,
+    minimumFractionDigits: 1,
+  })
 }
 
 function renderCompactStars(count: number) {
@@ -188,8 +227,10 @@ function TabButton({
 }
 
 function ReviewSummary({
+  locale,
   summary,
 }: {
+  locale: SupportedLocale
   summary: ParkingRatingSummary
 }) {
   const maxStarCount = useMemo(() => {
@@ -211,10 +252,10 @@ function ReviewSummary({
     <section className="flex items-center gap-6 px-6 py-4">
       <div className="w-24 shrink-0">
         <div className="font-heading text-5xl leading-10 font-normal text-text-primary">
-          {formatSummaryRating(summary.averageRating)}
+          {formatSummaryRating(summary.averageRating, locale)}
         </div>
         <div className="mt-2 whitespace-nowrap font-heading text-sm font-normal text-text-secondary">
-          {summary.reviewsCount} reviews
+          {formatReviewCount(summary.reviewsCount, locale)}
         </div>
       </div>
 
@@ -239,33 +280,37 @@ function ReviewSummary({
 
 function ReviewsContent({
   isLoading,
+  locale,
   reviews,
   summary,
 }: {
   isLoading: boolean
+  locale: SupportedLocale
   reviews: ParkingReview[]
   summary: ParkingRatingSummary
 }) {
-      if (isLoading) {
+  const messages = getParkingMessages(locale)
+
+  if (isLoading) {
     return (
       <div className="rounded-[10px] bg-surface px-4 py-5 font-heading text-sm font-normal text-text-secondary shadow-card">
-        Loading reviews...
+        {messages.loadingReviews}
       </div>
     )
   }
 
   return (
     <div className="space-y-4">
-      <ReviewSummary summary={summary} />
+      <ReviewSummary locale={locale} summary={summary} />
 
       <section className="space-y-4">
         <h3 className="font-heading text-[20px] leading-[20px] font-medium text-text-primary">
-          All reviews
+          {messages.allReviews}
         </h3>
 
         {summary.reviewsCount === 0 ? (
           <div className="rounded-[10px] bg-surface px-4 py-5 font-heading text-sm font-normal text-text-secondary shadow-card">
-            No reviews for this parking yet.
+            {messages.noReviews}
           </div>
         ) : (
           <div className="space-y-4">
@@ -281,15 +326,19 @@ function ReviewsContent({
 
 function PhotosContent({
   isLoading,
+  locale,
   photos,
 }: {
   isLoading: boolean
+  locale: SupportedLocale
   photos: ParkingPhoto[]
 }) {
+  const messages = getParkingMessages(locale)
+
   if (isLoading) {
     return (
       <div className="rounded-[10px] bg-surface px-4 py-5 font-heading text-sm font-normal text-text-secondary shadow-card">
-        Loading photos...
+        {messages.loadingPhotos}
       </div>
     )
   }
@@ -297,7 +346,7 @@ function PhotosContent({
   if (photos.length === 0) {
     return (
       <div className="rounded-[10px] bg-surface px-4 py-5 font-heading text-sm font-normal text-text-secondary shadow-card">
-        No photos for this parking yet.
+        {messages.noPhotos}
       </div>
     )
   }
@@ -323,14 +372,18 @@ function PhotosContent({
 function ComplaintsContent({
   complaints,
   isLoading,
+  locale,
 }: {
   complaints: ParkingComplaint[]
   isLoading: boolean
+  locale: SupportedLocale
 }) {
+  const messages = getParkingMessages(locale)
+
   if (isLoading) {
     return (
       <div className="rounded-[10px] bg-surface px-4 py-5 font-heading text-sm font-normal text-text-secondary shadow-card">
-        Loading complaints...
+        {messages.loadingComplaints}
       </div>
     )
   }
@@ -339,12 +392,12 @@ function ComplaintsContent({
     <div className="space-y-4 py-2">
       <section className="space-y-4">
         <h3 className="px-4 font-heading text-base leading-5 font-medium text-text-primary">
-          All complaints
+          {messages.allComplaints}
         </h3>
 
         {complaints.length === 0 ? (
           <div className="rounded-[10px] bg-surface px-4 py-5 font-heading text-sm font-normal text-text-secondary shadow-card">
-            No complaints for this parking yet.
+            {messages.noComplaints}
           </div>
         ) : (
           <div className="space-y-4">
@@ -362,6 +415,8 @@ export function ParkingDetailsPanel({
   onClose,
   parking,
 }: ParkingDetailsPanelProps) {
+  const locale = useSystemLocale()
+  const messages = getParkingMessages(locale)
   const [activeTab, setActiveTab] = useState<DetailTabId>('info')
   const [activePhotoIndex, setActivePhotoIndex] = useState(0)
   const [isTabsDragging, setIsTabsDragging] = useState(false)
@@ -379,17 +434,19 @@ export function ParkingDetailsPanel({
   const { isLoading: isReviewsLoading, reviews, summary: reviewSummary } =
     useParkingReviews(parking.id)
   const detail = buildParkingDetailModel(parking)
-  const tabs = buildTabs(
+  const tabs = buildLocalizedTabs(
     reviewSummary.reviewsCount,
     complaints.length,
     photos.length,
+    locale,
   )
-  const title = parking.address ?? 'Unnamed parking'
-  const heroPhotos = photos.length > 0 ? photos : [{ id: 'fallback', url: parkingDetailHero }]
-  const activeHeroPhoto = heroPhotos[Math.min(activePhotoIndex, heroPhotos.length - 1)]
-  const authorName =
-    author.fullName?.trim() ||
-    '\u0423\u0434\u0430\u043b\u0435\u043d\u043d\u044b\u0439 \u043f\u043e\u043b\u044c\u0437\u043e\u0432\u0430\u0442\u0435\u043b\u044c'
+  const title = parking.address ?? messages.noAddress
+  const hasHeroPhotos = photos.length > 0
+  const heroPhotos = hasHeroPhotos ? photos : []
+  const activeHeroPhoto = hasHeroPhotos
+    ? heroPhotos[Math.min(activePhotoIndex, heroPhotos.length - 1)]
+    : null
+  const authorName = author.fullName?.trim() || messages.anonymousUser
   const authorInitial = authorName.charAt(0).toUpperCase()
 
   function handleTabsPointerDown(event: PointerEvent<HTMLDivElement>) {
@@ -450,13 +507,24 @@ export function ParkingDetailsPanel({
   return (
     <aside className="pointer-events-auto flex h-full w-full max-w-[28rem] flex-col overflow-hidden rounded-none bg-surface-muted shadow-[0_16px_40px_rgb(0_0_0_/_0.08)] md:max-w-[28rem] md:border-r md:border-border">
       <div className="relative">
-        <img
-          alt={title}
-          className="h-64 w-full object-cover md:h-[21.25rem]"
-          src={activeHeroPhoto.url}
-        />
+        {activeHeroPhoto ? (
+          <img
+            alt={title}
+            className="h-64 w-full object-cover md:h-[21.25rem]"
+            src={activeHeroPhoto.url}
+          />
+        ) : (
+          <div className="flex h-64 w-full flex-col items-center justify-center gap-3 bg-[#F3F4F6] text-[#9CA3AF] md:h-[21.25rem]">
+            <span className="flex size-16 items-center justify-center rounded-full bg-[#E5E7EB]">
+              <CameraOff aria-hidden="true" className="size-8 stroke-[1.75]" />
+            </span>
+            <span className="font-heading text-sm font-medium tracking-tight">
+              {messages.noPhoto}
+            </span>
+          </div>
+        )}
         <button
-          aria-label="Close parking details"
+          aria-label={messages.close}
           className="absolute left-5 top-5 flex size-12 items-center justify-center rounded-2xl bg-surface text-text-primary shadow-card transition hover:bg-surface-muted"
           onClick={onClose}
           type="button"
@@ -466,7 +534,7 @@ export function ParkingDetailsPanel({
         {heroPhotos.length > 1 ? (
           <>
             <button
-              aria-label="Previous parking photo"
+              aria-label={messages.photo}
               className="absolute left-5 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface/92 text-text-primary shadow-card transition hover:bg-surface"
               onClick={goToPreviousPhoto}
               type="button"
@@ -474,7 +542,7 @@ export function ParkingDetailsPanel({
               <img alt="" aria-hidden="true" className="size-5" src={arrowIcon} />
             </button>
             <button
-              aria-label="Next parking photo"
+              aria-label={messages.photo}
               className="absolute right-5 top-1/2 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-surface/92 text-text-primary shadow-card transition hover:bg-surface"
               onClick={goToNextPhoto}
               type="button"
@@ -489,7 +557,7 @@ export function ParkingDetailsPanel({
             <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/25 px-3 py-1.5 backdrop-blur-sm">
               {heroPhotos.map((photo, index) => (
                 <button
-                  aria-label={`Open parking photo ${index + 1}`}
+                  aria-label={`${messages.photo} ${index + 1}`}
                   className={cn(
                     'size-2.5 rounded-full transition',
                     index === activePhotoIndex ? 'bg-white' : 'bg-white/45',
@@ -504,7 +572,7 @@ export function ParkingDetailsPanel({
         ) : null}
         {isPhotosLoading ? (
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/40 to-transparent px-5 py-4 text-sm text-white">
-            Loading photos...
+            {messages.loadingPhotos}
           </div>
         ) : null}
       </div>
@@ -523,7 +591,7 @@ export function ParkingDetailsPanel({
             </span>
           )}
           <span className="font-heading text-[16px] leading-6 font-medium text-on-surface">
-            {isAuthorLoading ? 'Loading...' : authorName}
+            {isAuthorLoading ? messages.loading : authorName}
           </span>
         </div>
 
@@ -533,14 +601,14 @@ export function ParkingDetailsPanel({
             type="button"
           >
             <img alt="" aria-hidden="true" className="size-5" src={trashIcon} />
-            <span>Delete</span>
+            <span>{messages.delete}</span>
           </button>
           <button
             className="flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-medium text-white shadow-card transition hover:bg-primary-dark"
             type="button"
           >
             <img alt="" aria-hidden="true" className="size-5" src={editIcon} />
-            <span>Edit</span>
+            <span>{messages.edit}</span>
           </button>
         </div>
 
@@ -577,7 +645,7 @@ export function ParkingDetailsPanel({
             />
             <InfoCard
               icon={ratingIcon}
-              subtitle={`${reviewSummary.reviewsCount} reviews`}
+              subtitle={formatReviewCount(reviewSummary.reviewsCount, locale)}
               title={
                 reviewSummary.averageRating
                   ? reviewSummary.averageRating.toFixed(1)
@@ -586,13 +654,13 @@ export function ParkingDetailsPanel({
             />
             <InfoCard
               icon={capasityIcon}
-              subtitle={`${detail.capacity} spots`}
-              title="Capacity"
+              subtitle={formatSpotsCount(detail.capacity, locale)}
+              title={messages.capacity}
             />
 
             <section className="rounded-[10px] bg-surface px-4 py-4 shadow-card">
               <h3 className="mb-3 font-heading text-base font-medium text-text-primary">
-                Additional services
+                {messages.additionalServices}
               </h3>
               <div className="space-y-3">
                 {detail.services.map((service) => (
@@ -604,7 +672,7 @@ export function ParkingDetailsPanel({
                       src={service.icon}
                     />
                     <span className="font-heading text-base font-normal text-text-primary">
-                      {service.label}
+                      {getLocalizedServiceLabel(service.id, locale)}
                     </span>
                   </div>
                 ))}
@@ -616,17 +684,23 @@ export function ParkingDetailsPanel({
         {activeTab === 'reviews' ? (
           <ReviewsContent
             isLoading={isReviewsLoading}
+            locale={locale}
             reviews={reviews}
             summary={reviewSummary}
           />
         ) : null}
         {activeTab === 'photo' ? (
-          <PhotosContent isLoading={isPhotosLoading} photos={photos} />
+          <PhotosContent
+            isLoading={isPhotosLoading}
+            locale={locale}
+            photos={photos}
+          />
         ) : null}
         {activeTab === 'complaints' ? (
           <ComplaintsContent
             complaints={complaints}
             isLoading={isComplaintsLoading}
+            locale={locale}
           />
         ) : null}
       </div>

@@ -9,6 +9,7 @@ import requestsGrayIcon from '../../assets/icons/requests-gray.svg'
 import reviewsBlueIcon from '../../assets/icons/reviews-blue.svg'
 import reviewsGrayIcon from '../../assets/icons/reviews-gray.svg'
 import logo from '../../assets/logos/logo.svg'
+import { useParkingAdminPanels } from '../../features/parking/useParkingAdminPanels'
 import { cn } from '../../lib/cn'
 
 type SidebarItem = {
@@ -16,7 +17,6 @@ type SidebarItem = {
   badge?: number
   icon: string
   id: string
-  isActive?: boolean
   label: string
   onClick?: () => void
 }
@@ -27,37 +27,9 @@ type AppSidebarProps = {
 }
 
 type SidebarButtonProps = SidebarItem & {
+  isActive?: boolean
   isExpanded?: boolean
 }
-
-const navigationItems: SidebarItem[] = [
-  {
-    activeIcon: menuBlueIcon,
-    icon: menuGrayIcon,
-    id: 'menu',
-    isActive: true,
-    label: 'Parking list',
-  },
-  {
-    activeIcon: addParkingBlueIcon,
-    icon: addParkingGrayIcon,
-    id: 'add-parking',
-    label: 'Add parking',
-  },
-  {
-    activeIcon: requestsBlueIcon,
-    badge: 1,
-    icon: requestsGrayIcon,
-    id: 'requests',
-    label: 'Requests',
-  },
-  {
-    activeIcon: reviewsBlueIcon,
-    icon: reviewsGrayIcon,
-    id: 'reviews',
-    label: 'Reviews',
-  },
-]
 
 function stopSidebarToggle(event: MouseEvent<HTMLElement>) {
   event.stopPropagation()
@@ -112,7 +84,38 @@ function SidebarButton({
 
 export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const { activePanel, showParkingList } = useParkingAdminPanels()
   const displayEmail = userEmail ?? 'Example@mail.com'
+  const isParkingSectionActive =
+    activePanel === 'parking-details' || activePanel === 'parking-list'
+  const navigationItems: SidebarItem[] = [
+    {
+      activeIcon: menuBlueIcon,
+      icon: menuGrayIcon,
+      id: 'parking-list',
+      label: 'Parking list',
+      onClick: showParkingList,
+    },
+    {
+      activeIcon: addParkingBlueIcon,
+      icon: addParkingGrayIcon,
+      id: 'add-parking',
+      label: 'Add parking',
+    },
+    {
+      activeIcon: requestsBlueIcon,
+      badge: 1,
+      icon: requestsGrayIcon,
+      id: 'requests',
+      label: 'Requests',
+    },
+    {
+      activeIcon: reviewsBlueIcon,
+      icon: reviewsGrayIcon,
+      id: 'reviews',
+      label: 'Reviews',
+    },
+  ]
 
   return (
     <aside
@@ -145,7 +148,12 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
 
         <nav aria-label="Main navigation" className="flex flex-col gap-4">
           {navigationItems.map((item) => (
-            <SidebarButton key={item.id} {...item} isExpanded={isExpanded} />
+            <SidebarButton
+              key={item.id}
+              {...item}
+              isActive={item.id === 'parking-list' && isParkingSectionActive}
+              isExpanded={isExpanded}
+            />
           ))}
         </nav>
       </div>
@@ -155,7 +163,11 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
         className="grid w-full grid-cols-5 items-center justify-items-center gap-2 px-3 py-2 md:hidden"
       >
         {navigationItems.map((item) => (
-          <SidebarButton key={item.id} {...item} />
+          <SidebarButton
+            key={item.id}
+            {...item}
+            isActive={item.id === 'parking-list' && isParkingSectionActive}
+          />
         ))}
         <button
           aria-label="Log out"

@@ -25,6 +25,17 @@ export type ParkingMapItem = {
   rating: number | null
 }
 
+export type ParkingListItem = {
+  address: string | null
+  createdAt: string
+  id: string
+  latitude: number | null
+  longitude: number | null
+  rating: number | null
+}
+
+export type ParkingDetailItem = Pick<ParkingMapItem, 'address' | 'id' | 'rating'>
+
 export type ParkingPhoto = {
   id: string
   url: string
