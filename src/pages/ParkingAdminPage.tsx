@@ -1,5 +1,5 @@
 import { APIProvider } from '@vis.gl/react-google-maps'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import tickSquareIcon from '../assets/icons/tick-square.svg'
 import { ParkingMap } from '../components/maps/ParkingMap'
 import { mapsConfig } from '../config/maps'
@@ -10,22 +10,34 @@ import {
   createEmptyAddParkingDraft,
   loadAddParkingDraft,
   type AddParkingDraft,
+  type AddParkingDraftPhoto,
   type AddParkingServiceKey,
 } from '../features/parking/addParkingDraft'
 import { ParkingDetailsPanel } from '../features/parking/ParkingDetailsPanel'
 import { ParkingListPanel } from '../features/parking/ParkingListPanel'
 import { useParkingAdminPanels } from '../features/parking/useParkingAdminPanels'
 import { useSystemLocale } from '../hooks/useSystemLocale'
-import { createParking } from '../services/parkingService'
+import {
+  createParking,
+  getParkingForEdit,
+  updateParking,
+} from '../services/parkingService'
 import type {
   ParkingDetailItem,
   ParkingListItem,
   ParkingMapItem,
 } from '../types/parking'
 
-function ParkingAddedDialog({
+type SuccessDialogContent = {
+  description: string
+  title: string
+}
+
+function ParkingSuccessDialog({
+  content,
   onClose,
 }: {
+  content: SuccessDialogContent
   onClose: () => void
 }) {
   const locale = useSystemLocale()
@@ -46,10 +58,10 @@ function ParkingAddedDialog({
         />
         <div className="flex w-full flex-col items-center gap-2">
           <h2 className="text-center font-heading text-xl leading-7 font-semibold text-text-primary">
-            {messages.parkingAddedTitle}
+            {content.title}
           </h2>
           <p className="text-center font-heading text-base leading-5 font-normal text-text-secondary">
-            {messages.parkingAddedDescription}
+            {content.description}
           </p>
         </div>
         <button
@@ -89,8 +101,13 @@ function getErrorDetails(error: unknown) {
 export function ParkingAdminPage() {
   const locale = useSystemLocale()
   const messages = getParkingMessages(locale)
-  const { activePanel, closePanel, showParkingDetails, showParkingList } =
-    useParkingAdminPanels()
+  const {
+    activePanel,
+    closePanel,
+    showEditParking,
+    showParkingDetails,
+    showParkingList,
+  } = useParkingAdminPanels()
   const [selectedParking, setSelectedParking] = useState<ParkingDetailItem | null>(
     null,
   )
@@ -101,19 +118,42 @@ export function ParkingAdminPage() {
   const [addParkingDraft, setAddParkingDraft] = useState<AddParkingDraft>(() =>
     loadAddParkingDraft(),
   )
-  const [isAddParkingSuccessOpen, setIsAddParkingSuccessOpen] = useState(false)
+  const [editingParkingId, setEditingParkingId] = useState<string | null>(null)
+  const [successDialogContent, setSuccessDialogContent] =
+    useState<SuccessDialogContent | null>(null)
   const [mapRefreshKey, setMapRefreshKey] = useState(0)
   const [isSavingParking, setIsSavingParking] = useState(false)
   const [saveParkingError, setSaveParkingError] = useState<string | null>(null)
+  const previousPanelRef = useRef(activePanel)
+  const isParkingFormOpen =
+    activePanel === 'add-parking' || activePanel === 'edit-parking'
 
   useEffect(() => {
+    const previousPanel = previousPanelRef.current
+
+    if (activePanel === 'add-parking' && previousPanel !== 'add-parking') {
+      setEditingParkingId(null)
+      setSaveParkingError(null)
+      setAddParkingDraft(loadAddParkingDraft())
+    }
+
+    previousPanelRef.current = activePanel
+  }, [activePanel])
+
+  useEffect(() => {
+    if (activePanel !== 'add-parking') {
+      return
+    }
+
     window.localStorage.setItem(
       ADD_PARKING_STORAGE_KEY,
       JSON.stringify(addParkingDraft),
     )
-  }, [addParkingDraft])
+  }, [activePanel, addParkingDraft])
 
   function handleSelectParking(parking: ParkingMapItem | ParkingListItem) {
+    setEditingParkingId(null)
+    setSaveParkingError(null)
     setSelectedParking(parking)
     setFocusedParking({
       latitude: 'latitude' in parking ? parking.latitude : null,
@@ -124,7 +164,19 @@ export function ParkingAdminPage() {
 
   function handleCloseParkingDetails() {
     setSelectedParking(null)
+    setEditingParkingId(null)
     showParkingList()
+  }
+
+  function handleCloseParkingForm() {
+    setSaveParkingError(null)
+
+    if (activePanel === 'edit-parking') {
+      showParkingDetails()
+      return
+    }
+
+    closePanel()
   }
 
   function updateAddParkingDraft(patch: Partial<AddParkingDraft>) {
@@ -146,7 +198,7 @@ export function ParkingAdminPage() {
     updateAddParkingDraft({ capacity: value })
   }
 
-  function handlePhotosChange(photos: string[]) {
+  function handlePhotosChange(photos: AddParkingDraftPhoto[]) {
     updateAddParkingDraft({ photos })
   }
 
@@ -205,13 +257,107 @@ export function ParkingAdminPage() {
       setFocusedParking(null)
       setMapRefreshKey((currentKey) => currentKey + 1)
       closePanel()
-      setIsAddParkingSuccessOpen(true)
+      setSuccessDialogContent({
+        description: messages.parkingAddedDescription,
+        title: messages.parkingAddedTitle,
+      })
     } catch (error) {
       const details = getErrorDetails(error)
       setSaveParkingError(
         details
           ? `${messages.unableToSaveParking} ${details}`
           : messages.unableToSaveParking,
+      )
+    } finally {
+      setIsSavingParking(false)
+    }
+  }
+
+  async function handleOpenEditParking(parking: ParkingDetailItem) {
+    setSaveParkingError(null)
+
+    try {
+      const editDraft = await getParkingForEdit(parking.id)
+      const normalizedEditDraft = {
+        ...editDraft,
+        address:
+          editDraft.address.trim() ||
+          (editDraft.latitude !== null && editDraft.longitude !== null
+            ? messages.noAddress
+            : ''),
+      }
+      setAddParkingDraft(normalizedEditDraft)
+      setEditingParkingId(parking.id)
+      setFocusedParking({
+        latitude: normalizedEditDraft.latitude,
+        longitude: normalizedEditDraft.longitude,
+      })
+      showEditParking()
+    } catch (error) {
+      const details = getErrorDetails(error)
+      setSaveParkingError(
+        details
+          ? `${messages.unableToUpdateParking} ${details}`
+          : messages.unableToUpdateParking,
+      )
+    }
+  }
+
+  async function handleUpdateParking() {
+    if (
+      !editingParkingId ||
+      addParkingDraft.latitude === null ||
+      addParkingDraft.longitude === null ||
+      isSavingParking
+    ) {
+      return
+    }
+
+    setIsSavingParking(true)
+    setSaveParkingError(null)
+
+    const address = addParkingDraft.address.trim()
+    const normalizedAddress =
+      !address || address === messages.noAddress ? 'no address' : address
+    const capacity = addParkingDraft.capacity.trim()
+      ? Number(addParkingDraft.capacity)
+      : null
+
+    try {
+      await updateParking(editingParkingId, {
+        address: normalizedAddress,
+        capacity,
+        latitude: addParkingDraft.latitude,
+        longitude: addParkingDraft.longitude,
+        photos: addParkingDraft.photos,
+        services: addParkingDraft.services,
+      })
+
+      setSelectedParking((currentParking) =>
+        currentParking?.id === editingParkingId
+          ? {
+              ...currentParking,
+              address: normalizedAddress,
+            }
+          : currentParking,
+      )
+      setFocusedParking({
+        latitude: addParkingDraft.latitude,
+        longitude: addParkingDraft.longitude,
+      })
+      setMapRefreshKey((currentKey) => currentKey + 1)
+      closePanel()
+      setEditingParkingId(null)
+      setSuccessDialogContent({
+        description: messages.parkingUpdatedDescription,
+        title: messages.parkingUpdatedTitle,
+      })
+    } catch (error) {
+      const details = getErrorDetails(error)
+      setSaveParkingError(
+        details
+          ? `${messages.unableToUpdateParking} ${details}`
+          : messages.unableToUpdateParking,
       )
     } finally {
       setIsSavingParking(false)
@@ -226,7 +372,7 @@ export function ParkingAdminPage() {
     <APIProvider apiKey={mapsConfig.apiKey} language="en" libraries={['places']}>
       <div className="relative min-h-screen bg-background">
         <ParkingMap
-          addParkingDraft={activePanel === 'add-parking' ? addParkingDraft : null}
+          addParkingDraft={isParkingFormOpen ? addParkingDraft : null}
           focusedParking={focusedParking}
           onAddParkingLocationSelect={handleAddParkingLocationSelect}
           onSelectParking={handleSelectParking}
@@ -240,19 +386,33 @@ export function ParkingAdminPage() {
             />
           </div>
         ) : null}
-        {activePanel === 'add-parking' ? (
+        {isParkingFormOpen ? (
           <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-full max-w-[24.5rem]">
             <AddParkingPanel
               draft={addParkingDraft}
               onAddressInputChange={handleAddressInputChange}
               onCapacityChange={handleCapacityChange}
-              onClose={closePanel}
+              onClose={handleCloseParkingForm}
               onLocationSelect={handleAddParkingLocationSelect}
               onPhotosChange={handlePhotosChange}
-              onSubmit={() => void handleCreateParking()}
+              onSubmit={() =>
+                activePanel === 'edit-parking'
+                  ? void handleUpdateParking()
+                  : void handleCreateParking()
+              }
               onToggleService={handleToggleService}
               saveError={saveParkingError}
               saving={isSavingParking}
+              submitLabel={
+                activePanel === 'edit-parking'
+                  ? messages.saveChanges
+                  : messages.addParking
+              }
+              title={
+                activePanel === 'edit-parking'
+                  ? messages.editingParking
+                  : messages.addingParking
+              }
             />
           </div>
         ) : null}
@@ -261,13 +421,15 @@ export function ParkingAdminPage() {
             <ParkingDetailsPanel
               key={selectedParking.id}
               onClose={handleCloseParkingDetails}
+              onEdit={(parking) => void handleOpenEditParking(parking)}
               parking={selectedParking}
             />
           </div>
         ) : null}
-        {isAddParkingSuccessOpen ? (
-          <ParkingAddedDialog
-            onClose={() => setIsAddParkingSuccessOpen(false)}
+        {successDialogContent ? (
+          <ParkingSuccessDialog
+            content={successDialogContent}
+            onClose={() => setSuccessDialogContent(null)}
           />
         ) : null}
       </div>

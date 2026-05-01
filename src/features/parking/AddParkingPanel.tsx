@@ -23,6 +23,7 @@ import { useSystemLocale } from '../../hooks/useSystemLocale'
 import { cn } from '../../lib/cn'
 import type {
   AddParkingDraft,
+  AddParkingDraftPhoto,
   AddParkingServiceKey,
 } from './addParkingDraft'
 
@@ -51,11 +52,13 @@ type AddParkingPanelProps = {
   onCapacityChange: (_value: string) => void
   onClose: () => void
   onLocationSelect: (_selection: AddressSelection) => void
-  onPhotosChange: (_photos: string[]) => void
+  onPhotosChange: (_photos: AddParkingDraftPhoto[]) => void
   onSubmit: () => void
   onToggleService: (_serviceId: AddParkingServiceKey) => void
   saveError: string | null
   saving: boolean
+  submitLabel: string
+  title: string
 }
 
 function SectionCard({
@@ -125,6 +128,8 @@ export function AddParkingPanel({
   onToggleService,
   saveError,
   saving,
+  submitLabel,
+  title,
 }: AddParkingPanelProps) {
   const locale = useSystemLocale()
   const messages = getParkingMessages(locale)
@@ -273,7 +278,13 @@ export function AddParkingPanel({
     }
 
     const photoDataUrls = await readFilesAsDataUrls(nextFiles)
-    onPhotosChange([...draft.photos, ...photoDataUrls])
+    const nextPhotos = photoDataUrls.map<AddParkingDraftPhoto>((url) => ({
+      id: null,
+      isNew: true,
+      url,
+    }))
+
+    onPhotosChange([...draft.photos, ...nextPhotos])
     event.target.value = ''
   }
 
@@ -337,7 +348,7 @@ export function AddParkingPanel({
     <aside className="pointer-events-auto flex h-full w-full max-w-[24.5rem] flex-col overflow-hidden rounded-none border-r border-border bg-surface-muted shadow-[0_16px_40px_rgb(0_0_0_/_0.08)]">
       <div className="flex items-center justify-between gap-4 px-6 py-6">
         <h2 className="font-heading text-[20px] leading-7 font-normal text-text-primary">
-          {messages.addingParking}
+          {title}
         </h2>
         <button
           aria-label={messages.close}
@@ -453,12 +464,12 @@ export function AddParkingPanel({
                 {draft.photos.map((photo, index) => (
                   <div
                     className="relative size-24 shrink-0 overflow-hidden rounded-xl"
-                    key={`${photo.slice(0, 32)}-${index}`}
+                    key={`${photo.id ?? photo.url.slice(0, 32)}-${index}`}
                   >
                     <img
                       alt={`${messages.photo} ${index + 1}`}
                       className="h-full w-full object-cover"
-                      src={photo}
+                      src={photo.url}
                     />
                     <button
                       aria-label={`${messages.delete} ${messages.photo.toLowerCase()} ${index + 1}`}
@@ -552,7 +563,7 @@ export function AddParkingPanel({
             onClick={onSubmit}
             type="button"
           >
-            {saving ? messages.loading : messages.addParking}
+            {saving ? messages.loading : submitLabel}
           </button>
 
           {saveError ? (

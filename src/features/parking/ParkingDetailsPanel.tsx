@@ -22,6 +22,7 @@ import { ParkingComplaintCard } from './ParkingComplaintCard'
 import { ParkingReviewCard } from './ParkingReviewCard'
 import { useParkingAuthor } from '../../hooks/useParkingAuthor'
 import { useParkingComplaints } from '../../hooks/useParkingComplaints'
+import { useParkingDetails } from '../../hooks/useParkingDetails'
 import { useParkingPhotos } from '../../hooks/useParkingPhotos'
 import { useParkingReviews } from '../../hooks/useParkingReviews'
 import { useSystemLocale } from '../../hooks/useSystemLocale'
@@ -36,6 +37,7 @@ import type {
 
 type ParkingDetailsPanelProps = {
   onClose: () => void
+  onEdit: (_parking: ParkingDetailItem) => void
   parking: ParkingDetailItem
 }
 
@@ -95,6 +97,49 @@ function buildParkingDetailModel(parking: ParkingDetailItem): ParkingDetailModel
     capacity: 40 + (seed % 13) * 10,
     ratingLabel: formatRating(parking.rating, seed),
     services: activeServices.length >= 3 ? activeServices : ALL_SERVICES.slice(0, 4),
+  }
+}
+
+function buildParkingDetailModelFromRecord(
+  parking: ParkingDetailItem,
+  record: {
+    has_gas_station: boolean
+    has_hotel: boolean
+    has_laundry: boolean
+    has_recreation_area: boolean
+    has_shop: boolean
+    has_shower: boolean
+    rating: number | null
+    total_spaces: number | null
+  } | null,
+): ParkingDetailModel {
+  if (!record) {
+    return buildParkingDetailModel(parking)
+  }
+
+  const services = ALL_SERVICES.filter((service) => {
+    switch (service.id) {
+      case 'gas':
+        return record.has_gas_station
+      case 'hotel':
+        return record.has_hotel
+      case 'laundry':
+        return record.has_laundry
+      case 'recreation':
+        return record.has_recreation_area
+      case 'shop':
+        return record.has_shop
+      case 'shower':
+        return record.has_shower
+      default:
+        return false
+    }
+  })
+
+  return {
+    capacity: record.total_spaces ?? 0,
+    ratingLabel: formatRating(record.rating ?? parking.rating, hashString(parking.id)),
+    services: services.length > 0 ? services : [],
   }
 }
 
@@ -413,6 +458,7 @@ function ComplaintsContent({
 
 export function ParkingDetailsPanel({
   onClose,
+  onEdit,
   parking,
 }: ParkingDetailsPanelProps) {
   const locale = useSystemLocale()
@@ -428,19 +474,20 @@ export function ParkingDetailsPanel({
   })
   const tabsScrollRef = useRef<HTMLDivElement | null>(null)
   const { author, isLoading: isAuthorLoading } = useParkingAuthor(parking.id)
+  const { details: parkingDetails } = useParkingDetails(parking.id)
   const { complaints, isLoading: isComplaintsLoading } =
     useParkingComplaints(parking.id)
   const { isLoading: isPhotosLoading, photos } = useParkingPhotos(parking.id)
   const { isLoading: isReviewsLoading, reviews, summary: reviewSummary } =
     useParkingReviews(parking.id)
-  const detail = buildParkingDetailModel(parking)
+  const detail = buildParkingDetailModelFromRecord(parking, parkingDetails)
   const tabs = buildLocalizedTabs(
     reviewSummary.reviewsCount,
     complaints.length,
     photos.length,
     locale,
   )
-  const title = parking.address ?? messages.noAddress
+  const title = parkingDetails?.address ?? parking.address ?? messages.noAddress
   const hasHeroPhotos = photos.length > 0
   const heroPhotos = hasHeroPhotos ? photos : []
   const activeHeroPhoto = hasHeroPhotos
@@ -605,6 +652,7 @@ export function ParkingDetailsPanel({
           </button>
           <button
             className="flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-medium text-white shadow-card transition hover:bg-primary-dark"
+            onClick={() => onEdit(parking)}
             type="button"
           >
             <img alt="" aria-hidden="true" className="size-5" src={editIcon} />

@@ -13,6 +13,7 @@ type Messages = {
   delete: string
   details: string
   edit: string
+  editingParking: string
   enterAddress: string
   gasStation: string
   hotel: string
@@ -32,18 +33,22 @@ type Messages = {
   parkingList: string
   parkingAddedDescription: string
   parkingAddedTitle: string
+  parkingUpdatedDescription: string
+  parkingUpdatedTitle: string
   photo: string
   readLess: string
   readMore: string
   recreationArea: string
   reviews: string
   search: string
+  saveChanges: string
   shop: string
   shower: string
   spots: string
   upTo: string
   unableToLoadParkingList: string
   unableToSaveParking: string
+  unableToUpdateParking: string
 }
 
 const messagesByLocale: Record<SupportedLocale, Messages> = {
@@ -60,6 +65,7 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     delete: 'Delete',
     details: 'More detailed',
     edit: 'Edit',
+    editingParking: 'Editing parking',
     enterAddress: 'Enter address',
     gasStation: 'Gas station',
     hotel: 'Hotel',
@@ -79,18 +85,22 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     parkingList: 'Parking list',
     parkingAddedDescription: 'Parking has been added and will be displayed on the map',
     parkingAddedTitle: 'Parking added',
+    parkingUpdatedDescription: 'Parking changes have been saved and will be displayed on the map',
+    parkingUpdatedTitle: 'Parking updated',
     photo: 'Photo',
     readLess: 'Read less',
     readMore: 'Read more',
     recreationArea: 'Recreation area',
     reviews: 'Reviews',
     search: 'Search',
+    saveChanges: 'Save changes',
     shop: 'Shop',
     shower: 'Shower',
     spots: 'spots',
     upTo: 'Up to',
     unableToLoadParkingList: 'Unable to load parking list.',
     unableToSaveParking: 'Unable to save parking. Please try again.',
+    unableToUpdateParking: 'Unable to update parking. Please try again.',
   },
   ru: {
     addParking: '\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0443',
@@ -105,6 +115,7 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     delete: '\u0423\u0434\u0430\u043b\u0438\u0442\u044c',
     details: '\u041f\u043e\u0434\u0440\u043e\u0431\u043d\u0435\u0435',
     edit: '\u0420\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c',
+    editingParking: '\u0420\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438',
     enterAddress: '\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u0430\u0434\u0440\u0435\u0441',
     gasStation: '\u0417\u0430\u043f\u0440\u0430\u0432\u043a\u0430',
     hotel: '\u041e\u0442\u0435\u043b\u044c',
@@ -124,18 +135,22 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     parkingList: '\u0421\u043f\u0438\u0441\u043e\u043a \u043f\u0430\u0440\u043a\u043e\u0432\u043e\u043a',
     parkingAddedDescription: '\u041f\u0430\u0440\u043a\u043e\u0432\u043a\u0430 \u0434\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u0430 \u0438 \u0431\u0443\u0434\u0435\u0442 \u043e\u0442\u043e\u0431\u0440\u0430\u0436\u0430\u0442\u044c\u0441\u044f \u043d\u0430 \u043a\u0430\u0440\u0442\u0435',
     parkingAddedTitle: '\u041f\u0430\u0440\u043a\u043e\u0432\u043a\u0430 \u0434\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u0430',
+    parkingUpdatedDescription: '\u0418\u0437\u043c\u0435\u043d\u0435\u043d\u0438\u044f \u0441\u043e\u0445\u0440\u0430\u043d\u0435\u043d\u044b \u0438 \u0431\u0443\u0434\u0443\u0442 \u043e\u0442\u043e\u0431\u0440\u0430\u0436\u0430\u0442\u044c\u0441\u044f \u043d\u0430 \u043a\u0430\u0440\u0442\u0435',
+    parkingUpdatedTitle: '\u041f\u0430\u0440\u043a\u043e\u0432\u043a\u0430 \u0431\u044b\u043b\u0430 \u0438\u0437\u043c\u0435\u043d\u0435\u043d\u0430',
     photo: '\u0424\u043e\u0442\u043e',
     readLess: '\u0421\u0432\u0435\u0440\u043d\u0443\u0442\u044c',
     readMore: '\u0427\u0438\u0442\u0430\u0442\u044c \u0434\u0430\u043b\u044c\u0448\u0435',
     recreationArea: '\u0417\u043e\u043d\u0430 \u043e\u0442\u0434\u044b\u0445\u0430',
     reviews: '\u041e\u0442\u0437\u044b\u0432\u044b',
     search: '\u041f\u043e\u0438\u0441\u043a',
+    saveChanges: '\u0421\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u0438\u0437\u043c\u0435\u043d\u0435\u043d\u0438\u044f',
     shop: '\u041c\u0430\u0433\u0430\u0437\u0438\u043d',
     shower: '\u0414\u0443\u0448',
     spots: '\u043c\u0435\u0441\u0442',
     upTo: '\u0414\u043e',
     unableToLoadParkingList: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0441\u043f\u0438\u0441\u043e\u043a \u043f\u0430\u0440\u043a\u043e\u0432\u043e\u043a.',
     unableToSaveParking: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0443. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0435 \u0440\u0430\u0437.',
+    unableToUpdateParking: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0431\u043d\u043e\u0432\u0438\u0442\u044c \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0443. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0435 \u0440\u0430\u0437.',
   },
 }
 

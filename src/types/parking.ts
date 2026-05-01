@@ -1,8 +1,12 @@
-import type { Tables, TablesInsert } from '../../types/supabase'
-import type { AddParkingServiceKey } from '../features/parking/addParkingDraft'
+import type { Tables, TablesInsert, TablesUpdate } from '../../types/supabase'
+import type {
+  AddParkingDraftPhoto,
+  AddParkingServiceKey,
+} from '../features/parking/addParkingDraft'
 
 export type ParkingRow = Tables<'parkings'>
 export type ParkingInsert = TablesInsert<'parkings'>
+export type ParkingUpdate = TablesUpdate<'parkings'>
 export type ParkingPhotoRow = Tables<'parking_photos'>
 export type ParkingPhotoInsert = TablesInsert<'parking_photos'>
 export type ParkingReportRow = Tables<'reports'>
@@ -37,6 +41,19 @@ export type ParkingListItem = {
 }
 
 export type ParkingDetailItem = Pick<ParkingMapItem, 'address' | 'id' | 'rating'>
+
+export type ParkingDetailRecord = Pick<
+  ParkingRow,
+  | 'address'
+  | 'has_gas_station'
+  | 'has_hotel'
+  | 'has_laundry'
+  | 'has_recreation_area'
+  | 'has_shop'
+  | 'has_shower'
+  | 'rating'
+  | 'total_spaces'
+>
 
 export type ParkingPhoto = {
   id: string
@@ -117,6 +134,6 @@ export type CreateParkingInput = {
   capacity: number | null
   latitude: number
   longitude: number
-  photos: string[]
+  photos: AddParkingDraftPhoto[]
   services: Record<AddParkingServiceKey, boolean>
 }

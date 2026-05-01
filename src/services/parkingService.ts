@@ -1,5 +1,9 @@
 import { SUPABASE_TABLES } from '../constants/supabaseTables'
 import { PARKING_STATUSES } from '../constants/userStatuses'
+import type {
+  AddParkingDraft,
+  AddParkingDraftPhoto,
+} from '../features/parking/addParkingDraft'
 import { getSupabaseClient } from '../lib/supabase'
 import { getUserProfilePreview } from './userService'
 import type {
@@ -21,6 +25,8 @@ import type {
   ParkingInsert,
   ParkingPoint,
   ParkingRow,
+  ParkingUpdate,
+  ParkingDetailRecord,
 } from '../types/parking'
 
 const PARKING_CONTENT_BUCKET = 'parking_content'
@@ -64,6 +70,19 @@ type FilteredParkingResponseItem = {
 type ParkingPhotoItem = Pick<ParkingPhotoRow, 'id' | 'url'>
 
 type ParkingAuthorRow = Pick<ParkingRow, 'created_by'>
+type ParkingEditRow = Pick<
+  ParkingRow,
+  | 'address'
+  | 'has_gas_station'
+  | 'has_hotel'
+  | 'has_laundry'
+  | 'has_recreation_area'
+  | 'has_shop'
+  | 'has_shower'
+  | 'latitude'
+  | 'longitude'
+  | 'total_spaces'
+>
 
 type ParkingReviewSummaryRow = Pick<
   ParkingRow,
@@ -121,6 +140,60 @@ function normalizeCapacity(value: number | null) {
   }
 
   return Math.trunc(value)
+}
+
+async function uploadNewParkingPhotos({
+  client,
+  parkingId,
+  photos,
+  userId,
+}: {
+  client: ReturnType<typeof getSupabaseClient>
+  parkingId: string
+  photos: AddParkingDraftPhoto[]
+  userId: string
+}) {
+  const photoRows: ParkingPhotoInsert[] = []
+
+  for (const [index, photo] of photos.entries()) {
+    if (!photo.isNew) {
+      continue
+    }
+
+    const blob = await dataUrlToBlob(photo.url)
+    const fileName = createParkingPhotoFileName(index, blob.type)
+    const path = `parkings/${parkingId}/${fileName}`
+    const { error: uploadError } = await client.storage
+      .from(PARKING_CONTENT_BUCKET)
+      .upload(path, blob, {
+        contentType: blob.type || 'image/jpeg',
+        upsert: false,
+      })
+
+    if (uploadError) {
+      throw new Error(`Upload parking photo failed: ${getSupabaseErrorMessage(uploadError)}`)
+    }
+
+    const {
+      data: { publicUrl },
+    } = client.storage.from(PARKING_CONTENT_BUCKET).getPublicUrl(path)
+
+    photoRows.push({
+      parking_id: parkingId,
+      url: publicUrl,
+      user_id: userId,
+    })
+  }
+
+  if (photoRows.length > 0) {
+    const { error: photosError } = await client
+      .from(SUPABASE_TABLES.PARKING_PHOTOS)
+      .insert(photoRows)
+
+    if (photosError) {
+      throw new Error(`Create parking photo records failed: ${getSupabaseErrorMessage(photosError)}`)
+    }
+  }
 }
 
 function getSupabaseErrorMessage(error: unknown) {
@@ -366,6 +439,23 @@ export async function getParkingReviewSummary(
   return normalizeParkingReviewSummary((data?.[0] ?? null) as ParkingReviewSummaryRow | null)
 }
 
+export async function getParkingDetails(parkingId: string) {
+  const client = getSupabaseClient()
+  const { data, error } = await client
+    .from(SUPABASE_TABLES.PARKINGS)
+    .select(
+      'address, has_gas_station, has_hotel, has_laundry, has_recreation_area, has_shop, has_shower, rating, total_spaces',
+    )
+    .eq('id', parkingId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`Load parking details failed: ${getSupabaseErrorMessage(error)}`)
+  }
+
+  return data as ParkingDetailRecord | null
+}
+
 export async function listParkingReviews(
   parkingId: string,
   signal?: AbortSignal,
@@ -588,43 +678,140 @@ export async function createParking(parking: CreateParkingInput) {
     throw new Error(`Create parking failed: ${getSupabaseErrorMessage(parkingError)}`)
   }
 
-  const photoRows: ParkingPhotoInsert[] = []
-
-  for (const [index, photo] of parking.photos.entries()) {
-    const blob = await dataUrlToBlob(photo)
-    const fileName = createParkingPhotoFileName(index, blob.type)
-    const path = `parkings/${createdParking.id}/${fileName}`
-    const { error: uploadError } = await client.storage
-      .from(PARKING_CONTENT_BUCKET)
-      .upload(path, blob, {
-        contentType: blob.type || 'image/jpeg',
-        upsert: false,
-      })
-
-    if (uploadError) {
-      throw new Error(`Upload parking photo failed: ${getSupabaseErrorMessage(uploadError)}`)
-    }
-
-    const {
-      data: { publicUrl },
-    } = client.storage.from(PARKING_CONTENT_BUCKET).getPublicUrl(path)
-
-    photoRows.push({
-      parking_id: createdParking.id,
-      url: publicUrl,
-      user_id: user.id,
-    })
-  }
-
-  if (photoRows.length > 0) {
-    const { error: photosError } = await client
-      .from(SUPABASE_TABLES.PARKING_PHOTOS)
-      .insert(photoRows)
-
-    if (photosError) {
-      throw new Error(`Create parking photo records failed: ${getSupabaseErrorMessage(photosError)}`)
-    }
-  }
+  await uploadNewParkingPhotos({
+    client,
+    parkingId: createdParking.id,
+    photos: parking.photos,
+    userId: user.id,
+  })
 
   return createdParking.id
+}
+
+export async function getParkingForEdit(parkingId: string): Promise<AddParkingDraft> {
+  const client = getSupabaseClient()
+  const { data: parking, error: parkingError } = await client
+    .from(SUPABASE_TABLES.PARKINGS)
+    .select(
+      'address, has_gas_station, has_hotel, has_laundry, has_recreation_area, has_shop, has_shower, latitude, longitude, total_spaces',
+    )
+    .eq('id', parkingId)
+    .maybeSingle()
+
+  if (parkingError) {
+    throw new Error(`Load parking for edit failed: ${getSupabaseErrorMessage(parkingError)}`)
+  }
+
+  if (!parking) {
+    throw new Error('Parking was not found')
+  }
+
+  const { data: photos, error: photosError } = await client
+    .from(SUPABASE_TABLES.PARKING_PHOTOS)
+    .select('id, url')
+    .eq('parking_id', parkingId)
+    .is('review_id', null)
+    .order('created_at', { ascending: true })
+
+  if (photosError) {
+    throw new Error(`Load parking photos for edit failed: ${getSupabaseErrorMessage(photosError)}`)
+  }
+
+  const parkingRow = parking as ParkingEditRow
+
+  return {
+    address: parkingRow.address ?? '',
+    capacity:
+      typeof parkingRow.total_spaces === 'number'
+        ? String(parkingRow.total_spaces)
+        : '',
+    latitude: parkingRow.latitude,
+    longitude: parkingRow.longitude,
+    photos: ((photos ?? []) as ParkingPhotoItem[]).map((photo) => ({
+      id: photo.id,
+      isNew: false,
+      url: photo.url,
+    })),
+    services: {
+      gas: parkingRow.has_gas_station,
+      hotel: parkingRow.has_hotel,
+      laundry: parkingRow.has_laundry,
+      recreation: parkingRow.has_recreation_area,
+      shop: parkingRow.has_shop,
+      shower: parkingRow.has_shower,
+    },
+  }
+}
+
+export async function updateParking(parkingId: string, parking: CreateParkingInput) {
+  const client = getSupabaseClient()
+  const {
+    data: { user },
+    error: userError,
+  } = await client.auth.getUser()
+
+  if (userError || !user) {
+    throw userError ?? new Error('Unable to resolve current user')
+  }
+
+  const address = normalizeNewParkingAddress(parking.address)
+  const parkingUpdate: ParkingUpdate = {
+    address,
+    address_lower: address.toLowerCase(),
+    has_gas_station: parking.services.gas,
+    has_hotel: parking.services.hotel,
+    has_laundry: parking.services.laundry,
+    has_recreation_area: parking.services.recreation,
+    has_shop: parking.services.shop,
+    has_shower: parking.services.shower,
+    latitude: parking.latitude,
+    longitude: parking.longitude,
+    total_spaces: normalizeCapacity(parking.capacity),
+  }
+
+  const { error: parkingError } = await client
+    .from(SUPABASE_TABLES.PARKINGS)
+    .update(parkingUpdate)
+    .eq('id', parkingId)
+
+  if (parkingError) {
+    throw new Error(`Update parking failed: ${getSupabaseErrorMessage(parkingError)}`)
+  }
+
+  const { data: existingPhotos, error: existingPhotosError } = await client
+    .from(SUPABASE_TABLES.PARKING_PHOTOS)
+    .select('id, url')
+    .eq('parking_id', parkingId)
+    .is('review_id', null)
+
+  if (existingPhotosError) {
+    throw new Error(`Load existing parking photos failed: ${getSupabaseErrorMessage(existingPhotosError)}`)
+  }
+
+  const retainedPhotoIds = new Set(
+    parking.photos
+      .filter((photo) => !photo.isNew && photo.id)
+      .map((photo) => photo.id as string),
+  )
+  const photoIdsToDelete = ((existingPhotos ?? []) as ParkingPhotoItem[])
+    .map((photo) => photo.id)
+    .filter((photoId) => !retainedPhotoIds.has(photoId))
+
+  if (photoIdsToDelete.length > 0) {
+    const { error: deletePhotosError } = await client
+      .from(SUPABASE_TABLES.PARKING_PHOTOS)
+      .delete()
+      .in('id', photoIdsToDelete)
+
+    if (deletePhotosError) {
+      throw new Error(`Delete parking photo records failed: ${getSupabaseErrorMessage(deletePhotosError)}`)
+    }
+  }
+
+  await uploadNewParkingPhotos({
+    client,
+    parkingId,
+    photos: parking.photos,
+    userId: user.id,
+  })
 }

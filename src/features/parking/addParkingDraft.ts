@@ -6,12 +6,18 @@ export type AddParkingServiceKey =
   | 'shop'
   | 'shower'
 
+export type AddParkingDraftPhoto = {
+  id: string | null
+  isNew: boolean
+  url: string
+}
+
 export type AddParkingDraft = {
   address: string
   capacity: string
   latitude: number | null
   longitude: number | null
-  photos: string[]
+  photos: AddParkingDraftPhoto[]
   services: Record<AddParkingServiceKey, boolean>
 }
 
@@ -58,7 +64,40 @@ export function loadAddParkingDraft(): AddParkingDraft {
         typeof parsedDraft.latitude === 'number' ? parsedDraft.latitude : null,
       longitude:
         typeof parsedDraft.longitude === 'number' ? parsedDraft.longitude : null,
-      photos: Array.isArray(parsedDraft.photos) ? parsedDraft.photos : [],
+      photos: Array.isArray(parsedDraft.photos)
+        ? parsedDraft.photos
+            .map((photo) => {
+              if (typeof photo === 'string') {
+                return {
+                  id: null,
+                  isNew: true,
+                  url: photo,
+                }
+              }
+
+              if (
+                typeof photo === 'object' &&
+                photo !== null &&
+                'url' in photo &&
+                typeof photo.url === 'string'
+              ) {
+                return {
+                  id:
+                    'id' in photo && typeof photo.id === 'string'
+                      ? photo.id
+                      : null,
+                  isNew:
+                    'isNew' in photo && typeof photo.isNew === 'boolean'
+                      ? photo.isNew
+                      : false,
+                  url: photo.url,
+                }
+              }
+
+              return null
+            })
+            .filter((photo): photo is AddParkingDraftPhoto => photo !== null)
+        : [],
       services: {
         ...EMPTY_ADD_PARKING_SERVICES,
         ...(parsedDraft.services ?? {}),
