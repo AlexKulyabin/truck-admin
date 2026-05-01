@@ -1,5 +1,11 @@
 import { CameraOff, Star } from 'lucide-react'
-import { useMemo, useRef, useState, type PointerEvent } from 'react'
+import {
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import arrowIcon from '../../assets/icons/arrow.svg'
 import capasityIcon from '../../assets/icons/capasity.svg'
 import editIcon from '../../assets/icons/edit.svg'
@@ -465,7 +471,16 @@ export function ParkingDetailsPanel({
   const messages = getParkingMessages(locale)
   const [activeTab, setActiveTab] = useState<DetailTabId>('info')
   const [activePhotoIndex, setActivePhotoIndex] = useState(0)
+  const [heroDragOffset, setHeroDragOffset] = useState(0)
+  const [isHeroDragging, setIsHeroDragging] = useState(false)
   const [isTabsDragging, setIsTabsDragging] = useState(false)
+  const heroDragStateRef = useRef({
+    currentOffset: 0,
+    inputType: null as 'mouse' | 'pointer' | null,
+    pointerId: null as number | null,
+    startOffset: 0,
+    startX: 0,
+  })
   const dragStateRef = useRef({
     hasMoved: false,
     pointerId: null as number | null,
@@ -494,8 +509,130 @@ export function ParkingDetailsPanel({
     ? activePhotoIndex % heroPhotos.length
     : 0
   const activeHeroPhoto = hasHeroPhotos ? heroPhotos[currentPhotoIndex] : null
+  const canDragHeroPhotos = heroPhotos.length > 1
   const authorName = author.fullName?.trim() || messages.anonymousUser
   const authorInitial = authorName.charAt(0).toUpperCase()
+
+  function cleanupHeroMouseListeners() {
+    window.removeEventListener('mousemove', handleHeroMouseMove)
+    window.removeEventListener('mouseup', handleHeroMouseUp)
+  }
+
+  function finishHeroDragging(pointerId: number | null) {
+    if (heroDragStateRef.current.pointerId !== pointerId) {
+      return
+    }
+
+    const deltaX = heroDragStateRef.current.currentOffset - heroDragStateRef.current.startOffset
+    const threshold = 80
+
+    if (deltaX > threshold) {
+      setActivePhotoIndex((currentIndex) => {
+        if (heroPhotos.length === 0) {
+          return 0
+        }
+
+        return (currentIndex - 1 + heroPhotos.length) % heroPhotos.length
+      })
+    } else if (deltaX < -threshold) {
+      setActivePhotoIndex((currentIndex) => {
+        if (heroPhotos.length === 0) {
+          return 0
+        }
+
+        return (currentIndex + 1) % heroPhotos.length
+      })
+    }
+
+    setHeroDragOffset(0)
+    setIsHeroDragging(false)
+    if (heroDragStateRef.current.inputType === 'mouse') {
+      cleanupHeroMouseListeners()
+    }
+    heroDragStateRef.current.pointerId = null
+    heroDragStateRef.current.inputType = null
+  }
+
+  function handleHeroPointerDown(event: PointerEvent<HTMLDivElement>) {
+    if (
+      event.button !== 0 ||
+      !canDragHeroPhotos ||
+      event.target instanceof Element && event.target.closest('button')
+    ) {
+      return
+    }
+
+    heroDragStateRef.current = {
+      currentOffset: 0,
+      inputType: 'pointer',
+      pointerId: event.pointerId,
+      startOffset: 0,
+      startX: event.clientX,
+    }
+    setIsHeroDragging(true)
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  function handleHeroPointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (
+      !isHeroDragging ||
+      heroDragStateRef.current.pointerId !== event.pointerId ||
+      !canDragHeroPhotos
+    ) {
+      return
+    }
+
+    const deltaX = event.clientX - heroDragStateRef.current.startX
+    const nextOffset = Math.max(-220, Math.min(220, deltaX))
+    heroDragStateRef.current.currentOffset = nextOffset
+    setHeroDragOffset(nextOffset)
+  }
+
+  function handleHeroMouseDown(event: ReactMouseEvent<HTMLDivElement>) {
+    if (
+      event.button !== 0 ||
+      !canDragHeroPhotos ||
+      heroDragStateRef.current.inputType !== null ||
+      event.target instanceof Element && event.target.closest('button')
+    ) {
+      return
+    }
+
+    heroDragStateRef.current = {
+      currentOffset: 0,
+      inputType: 'mouse',
+      pointerId: -1,
+      startOffset: 0,
+      startX: event.clientX,
+    }
+    setIsHeroDragging(true)
+    window.addEventListener('mousemove', handleHeroMouseMove)
+    window.addEventListener('mouseup', handleHeroMouseUp)
+  }
+
+  function handleHeroMouseMove(event: MouseEvent) {
+    if (
+      !isHeroDragging ||
+      heroDragStateRef.current.inputType !== 'mouse' ||
+      !canDragHeroPhotos
+    ) {
+      return
+    }
+
+    const deltaX = event.clientX - heroDragStateRef.current.startX
+    const nextOffset = Math.max(-220, Math.min(220, deltaX))
+    heroDragStateRef.current.currentOffset = nextOffset
+    setHeroDragOffset(nextOffset)
+  }
+
+  function handleHeroMouseUp() {
+    if (heroDragStateRef.current.inputType !== 'mouse') {
+      return
+    }
+
+    finishHeroDragging(heroDragStateRef.current.pointerId)
+    cleanupHeroMouseListeners()
+  }
 
   function handleTabsPointerDown(event: PointerEvent<HTMLDivElement>) {
     if (
@@ -542,11 +679,17 @@ export function ParkingDetailsPanel({
     dragStateRef.current.pointerId = null
   }
 
+  function handleHeroPointerUp(event: PointerEvent<HTMLDivElement>) {
+    finishHeroDragging(event.pointerId)
+  }
+
   function goToNextPhoto() {
+    setHeroDragOffset(0)
     setActivePhotoIndex((currentIndex) => (currentIndex + 1) % heroPhotos.length)
   }
 
   function goToPreviousPhoto() {
+    setHeroDragOffset(0)
     setActivePhotoIndex((currentIndex) => {
       return (currentIndex - 1 + heroPhotos.length) % heroPhotos.length
     })
@@ -554,13 +697,44 @@ export function ParkingDetailsPanel({
 
   return (
     <aside className="pointer-events-auto flex h-full w-full max-w-[28rem] flex-col overflow-hidden rounded-none bg-surface-muted shadow-[0_16px_40px_rgb(0_0_0_/_0.08)] md:max-w-[28rem] md:border-r md:border-border">
-      <div className="relative isolate pointer-events-auto">
+      <div
+        className={cn(
+          'relative isolate pointer-events-auto select-none touch-none',
+          canDragHeroPhotos
+            ? isHeroDragging
+              ? 'cursor-grabbing select-none'
+              : 'cursor-grab'
+            : '',
+        )}
+        onPointerCancel={(event) => finishHeroDragging(event.pointerId)}
+        onPointerDown={handleHeroPointerDown}
+        onPointerMove={handleHeroPointerMove}
+        onPointerUp={handleHeroPointerUp}
+        onMouseDown={handleHeroMouseDown}
+      >
         {activeHeroPhoto ? (
-          <img
-            alt={title}
-            className="pointer-events-none h-64 w-full object-cover md:h-[21.25rem]"
-            src={activeHeroPhoto.url}
-          />
+          <div className="relative h-64 w-full overflow-hidden md:h-[21.25rem]">
+            <div
+              className={cn(
+                'flex h-full w-full',
+                canDragHeroPhotos ? 'transition-transform duration-200 ease-out' : '',
+              )}
+              style={{
+                transform: `translate3d(calc(${-currentPhotoIndex * 100}% + ${heroDragOffset}px), 0, 0)`,
+                transition: isHeroDragging ? 'none' : undefined,
+              }}
+            >
+              {heroPhotos.map((photo, index) => (
+                <img
+                  alt={`${title} ${index + 1}`}
+                  className="pointer-events-none h-full w-full shrink-0 object-cover"
+                  key={photo.id}
+                  draggable={false}
+                  src={photo.url}
+                />
+              ))}
+            </div>
+          </div>
         ) : (
           <div className="flex h-64 w-full flex-col items-center justify-center gap-3 bg-[#F3F4F6] text-[#9CA3AF] md:h-[21.25rem]">
             <span className="flex size-16 items-center justify-center rounded-full bg-[#E5E7EB]">
