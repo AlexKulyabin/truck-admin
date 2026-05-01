@@ -1,8 +1,8 @@
-import { APIProvider, Map } from '@vis.gl/react-google-maps'
+import { AdvancedMarker, APIProvider, Map, Pin } from '@vis.gl/react-google-maps'
 import { MapPinned } from 'lucide-react'
 import { mapsConfig } from '../../config/maps'
 
-export function ParkingMap() {
+export function ParkingMap({ parkingPoints = [] }) {
   if (!mapsConfig.apiKey) {
     return (
       <section className="flex min-h-[520px] items-center justify-center rounded-lg border border-dashed border-[#b8c6b6] bg-white p-6 text-center">
@@ -29,7 +29,21 @@ export function ParkingMap() {
           defaultZoom={mapsConfig.defaultZoom}
           gestureHandling="greedy"
           mapId="truck-admin-parking-map"
-        />
+        >
+          {parkingPoints.map((point) => (
+            <AdvancedMarker
+              key={point.id}
+              position={{ lat: point.latitude, lng: point.longitude }}
+              title={point.name}
+            >
+              <Pin
+                background="#1f6f43"
+                borderColor="#185a36"
+                glyphColor="#ffffff"
+              />
+            </AdvancedMarker>
+          ))}
+        </Map>
       </APIProvider>
     </section>
   )

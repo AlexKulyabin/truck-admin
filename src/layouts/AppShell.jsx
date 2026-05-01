@@ -1,6 +1,16 @@
-import { MapPinned, ParkingCircle, Settings } from 'lucide-react'
+import { LogOut, MapPinned, ParkingCircle, Settings } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../features/auth/useAuth'
 
 export function AppShell({ children }) {
+  const navigate = useNavigate()
+  const { logout } = useAuth()
+
+  async function handleLogout() {
+    await logout()
+    navigate('/')
+  }
+
   return (
     <div className="min-h-screen bg-[#f5f7f4]">
       <header className="border-b border-[#dbe2d9] bg-white">
@@ -25,6 +35,14 @@ export function AppShell({ children }) {
             <button className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-[#5d6b61]">
               <Settings size={18} aria-hidden="true" />
               Settings
+            </button>
+            <button
+              className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-[#5d6b61] hover:bg-[#eef3ec] hover:text-[#172119]"
+              onClick={handleLogout}
+              type="button"
+            >
+              <LogOut size={18} aria-hidden="true" />
+              Выйти
             </button>
           </nav>
         </div>
