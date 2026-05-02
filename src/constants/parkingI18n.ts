@@ -27,10 +27,18 @@ type Messages = {
   loadingReviews: string
   accepted: string
   new: string
+  approvalDialogTitle: string
+  approvalDialogSubtitle: string
   rejectRequest: string
   approveRequest: string
   unableToUpdateStatus: string
   rejected: string
+  rejectDialogTitle: string
+  rejectDialogSubtitle: string
+  rejectDialogDone: string
+  rejectionReasonDuplicate: string
+  rejectionReasonIncompleteData: string
+  rejectionReasonNotMeetingRequirements: string
   requests: string
   noAddress: string
   noComplaints: string
@@ -39,6 +47,9 @@ type Messages = {
   noPhoto: string
   noPhotos: string
   noReviews: string
+  noProfileReviews: string
+  noProfileComplaints: string
+  parkingDoesNotExist: string
   ok: string
   parkingList: string
   parkingAddedDescription: string
@@ -89,18 +100,29 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
   loadingReviews: 'Loading reviews...',
   accepted: 'Accepted',
   new: 'New',
+  approvalDialogTitle: 'The request has been approved',
+  approvalDialogSubtitle: 'Parking will be displayed on the map',
   rejectRequest: 'Reject',
-  approveRequest: 'Accept',
-  unableToUpdateStatus: 'Unable to update status. Please try again.',
-  rejected: 'Rejected',
-  requests: 'Requests',
+    approveRequest: 'Accept',
+    unableToUpdateStatus: 'Unable to update status. Please try again.',
+    rejected: 'Rejected',
+    rejectDialogTitle: 'Reject',
+    rejectDialogSubtitle: 'Specify the reason for the rejection',
+    rejectDialogDone: 'Done',
+    rejectionReasonDuplicate: 'Duplicate',
+    rejectionReasonIncompleteData: 'Incomplete data',
+    rejectionReasonNotMeetingRequirements: 'Does not meet the requirements of the service',
+    requests: 'Requests',
   noAddress: 'No address',
   noComplaints: 'No complaints for this parking yet.',
   noParkings: 'No parkings found.',
   noRequests: 'No requests found.',
-  noPhoto: 'No photo',
-  noPhotos: 'No photos for this parking yet.',
-  noReviews: 'No reviews for this parking yet.',
+    noPhoto: 'No photo',
+    noPhotos: 'No photos for this parking yet.',
+    noReviews: 'No reviews for this parking yet.',
+    noProfileReviews: 'There are no reviews',
+    noProfileComplaints: 'There are no complaints',
+    parkingDoesNotExist: 'Parking does not exist',
     ok: 'OK',
     parkingList: 'Parking list',
     parkingAddedDescription: 'Parking has been added and will be displayed on the map',
@@ -149,10 +171,18 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
   loadingReviews: '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u043e\u0442\u0437\u044b\u0432\u044b...',
   accepted: '\u041f\u0440\u0438\u043d\u044f\u0442\u044b\u0435',
   new: '\u041d\u043e\u0432\u044b\u0435',
+  approvalDialogTitle: '\u0417\u0430\u044f\u0432\u043a\u0430 \u043e\u0434\u043e\u0431\u0440\u0435\u043d\u0430',
+  approvalDialogSubtitle: '\u041f\u0430\u0440\u043a\u043e\u0432\u043a\u0430 \u0431\u0443\u0434\u0435\u0442 \u043e\u0442\u043e\u0431\u0440\u0430\u0436\u0430\u0442\u044c\u0441\u044f \u043d\u0430 \u043a\u0430\u0440\u0442\u0435',
   rejected: '\u041e\u0442\u043a\u043b\u043e\u043d\u0435\u043d\u043d\u044b\u0435',
   rejectRequest: '\u041e\u0442\u043a\u043b\u043e\u043d\u0438\u0442\u044c',
   approveRequest: '\u041f\u0440\u0438\u043d\u044f\u0442\u044c',
   unableToUpdateStatus: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0431\u043d\u043e\u0432\u0438\u0442\u044c \u0441\u0442\u0430\u0442\u0443\u0441. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437.',
+  rejectDialogTitle: '\u041e\u0442\u043a\u043b\u043e\u043d\u0438\u0442\u044c',
+  rejectDialogSubtitle: '\u0423\u043a\u0430\u0436\u0438\u0442\u0435 \u043f\u0440\u0438\u0447\u0438\u043d\u0443 \u043e\u0442\u043a\u043b\u043e\u043d\u0435\u043d\u0438\u044f',
+  rejectDialogDone: '\u0413\u043e\u0442\u043e\u0432\u043e',
+  rejectionReasonDuplicate: '\u0414\u0443\u0431\u043b\u0438\u043a\u0430\u0442',
+  rejectionReasonIncompleteData: '\u041d\u0435\u043f\u043e\u043b\u043d\u044b\u0435 \u0434\u0430\u043d\u043d\u044b\u0435',
+  rejectionReasonNotMeetingRequirements: '\u041d\u0435 \u0441\u043e\u043e\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0443\u0435\u0442 \u0442\u0440\u0435\u0431\u043e\u0432\u0430\u043d\u0438\u044f\u043c',
   requests: '\u0417\u0430\u044f\u0432\u043a\u0438',
   noAddress: '\u041d\u0435\u0442 \u0430\u0434\u0440\u0435\u0441\u0430',
   noComplaints: '\u0414\u043b\u044f \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u0436\u0430\u043b\u043e\u0431.',
@@ -160,7 +190,10 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
   noRequests: '\u0417\u0430\u044f\u0432\u043a\u0438 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b.',
   noPhoto: '\u041d\u0435\u0442 \u0444\u043e\u0442\u043e',
   noPhotos: '\u0423 \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u0444\u043e\u0442\u043e\u0433\u0440\u0430\u0444\u0438\u0439.',
-  noReviews: '\u0414\u043b\u044f \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u043e\u0442\u0437\u044b\u0432\u043e\u0432.',
+    noReviews: '\u0414\u043b\u044f \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u043e\u0442\u0437\u044b\u0432\u043e\u0432.',
+    noProfileReviews: '\u041d\u0435\u0442 \u043e\u0442\u0437\u044b\u0432\u043e\u0432',
+    noProfileComplaints: '\u041d\u0435\u0442 \u0436\u0430\u043b\u043e\u0431',
+    parkingDoesNotExist: '\u041f\u0430\u0440\u043a\u043e\u0432\u043a\u0430 \u043d\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442',
     ok: 'OK',
     parkingList: '\u0421\u043f\u0438\u0441\u043e\u043a \u043f\u0430\u0440\u043a\u043e\u0432\u043e\u043a',
     parkingAddedDescription: '\u041f\u0430\u0440\u043a\u043e\u0432\u043a\u0430 \u0434\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u0430 \u0438 \u0431\u0443\u0434\u0435\u0442 \u043e\u0442\u043e\u0431\u0440\u0430\u0436\u0430\u0442\u044c\u0441\u044f \u043d\u0430 \u043a\u0430\u0440\u0442\u0435',
@@ -205,6 +238,59 @@ function getRussianPlural(count: number, one: string, few: string, many: string)
 
 export function getParkingMessages(locale: SupportedLocale) {
   return messagesByLocale[locale]
+}
+
+export type ParkingRejectionReasonCode =
+  | 'duplicate'
+  | 'incomplete_data'
+  | 'not_meeting_requirements'
+
+export function formatParkingRejectionReasonLabel(
+  reason: ParkingRejectionReasonCode | null,
+  locale: SupportedLocale,
+) {
+  if (!reason) {
+    return null
+  }
+
+  const messages = getParkingMessages(locale)
+
+  switch (reason) {
+    case 'duplicate':
+      return messages.rejectionReasonDuplicate
+    case 'incomplete_data':
+      return messages.rejectionReasonIncompleteData
+    case 'not_meeting_requirements':
+      return messages.rejectionReasonNotMeetingRequirements
+    default:
+      return reason
+  }
+}
+
+export function formatComplaintReportLabel(
+  reportLabel: string | null,
+  locale: SupportedLocale,
+) {
+  if (!reportLabel) {
+    return null
+  }
+
+  const normalizedLabel = reportLabel.trim().toLowerCase()
+
+  switch (normalizedLabel) {
+    case 'report1':
+      return getParkingMessages(locale).parkingDoesNotExist
+    case 'report2':
+      return locale === 'ru'
+        ? '\u041e\u043f\u0430\u0441\u043d\u043e\u0435 \u043c\u0435\u0441\u0442\u043e'
+        : 'A dangerous place'
+    case 'report3':
+      return locale === 'ru'
+        ? '\u0414\u0440\u0443\u0433\u0430\u044f \u043f\u0440\u043e\u0431\u043b\u0435\u043c\u0430'
+        : 'Another problem'
+    default:
+      return reportLabel
+  }
 }
 
 export function formatReviewCount(count: number, locale: SupportedLocale) {

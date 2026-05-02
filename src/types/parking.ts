@@ -68,6 +68,7 @@ export type ParkingPhoto = {
 export type ParkingAuthor = {
   avatarUrl: string | null
   fullName: string | null
+  id: string | null
 }
 
 export type ParkingRatingSummary = {
@@ -82,8 +83,11 @@ export type ParkingReview = {
   comment: string | null
   createdAt: string
   id: number
+  parkingAddress: string | null
+  parkingId: string | null
   photos: ParkingPhoto[]
   score: number | null
+  thumbnailUrl: string | null
 }
 
 export type ParkingComplaint = {

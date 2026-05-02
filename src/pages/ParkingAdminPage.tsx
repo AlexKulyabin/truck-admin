@@ -1,9 +1,15 @@
-import { APIProvider } from '@vis.gl/react-google-maps'
+﻿import { APIProvider } from '@vis.gl/react-google-maps'
 import { useEffect, useRef, useState } from 'react'
 import tickSquareIcon from '../assets/icons/tick-square.svg'
+import radioOffIcon from '../assets/icons/radio-off.svg'
+import radioOnIcon from '../assets/icons/radio-on.svg'
 import { ParkingMap } from '../components/maps/ParkingMap'
 import { mapsConfig } from '../config/maps'
-import { getParkingMessages } from '../constants/parkingI18n'
+import {
+  getParkingMessages,
+  type ParkingRejectionReasonCode,
+  type SupportedLocale,
+} from '../constants/parkingI18n'
 import { AddParkingPanel } from '../features/parking/AddParkingPanel'
 import {
   ADD_PARKING_STORAGE_KEY,
@@ -15,9 +21,11 @@ import {
 } from '../features/parking/addParkingDraft'
 import { ParkingDetailsPanel } from '../features/parking/ParkingDetailsPanel'
 import { ParkingListPanel } from '../features/parking/ParkingListPanel'
+import { ParkingUserProfilePanel } from '../features/parking/ParkingUserProfilePanel'
 import { RequestsPanel } from '../features/parking/RequestsPanel'
 import { useParkingAdminPanels } from '../features/parking/useParkingAdminPanels'
 import { useSystemLocale } from '../hooks/useSystemLocale'
+import { cn } from '../lib/cn'
 import {
   createParking,
   getParkingForEdit,
@@ -28,11 +36,17 @@ import type {
   ParkingDetailItem,
   ParkingListItem,
   ParkingMapItem,
+  ParkingAuthor,
 } from '../types/parking'
 
 type SuccessDialogContent = {
   description: string
   title: string
+}
+
+type RejectionReasonOption = {
+  label: string
+  value: ParkingRejectionReasonCode
 }
 
 function ParkingSuccessDialog({
@@ -78,6 +92,153 @@ function ParkingSuccessDialog({
   )
 }
 
+function ParkingApprovalDialog({
+  content,
+  onClose,
+}: {
+  content: SuccessDialogContent
+  onClose: () => void
+}) {
+  const locale = useSystemLocale()
+  const messages = getParkingMessages(locale)
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/20 p-6 backdrop-blur-[3px]">
+      <section
+        aria-modal="true"
+        className="w-full max-w-[24.5625rem] overflow-hidden rounded-[10px] bg-white px-4 py-10 shadow-[0_16px_48px_rgb(0_0_0_/_0.18)] sm:px-5"
+        role="dialog"
+      >
+        <div className="flex flex-col items-center gap-6">
+          <img
+            alt=""
+            aria-hidden="true"
+            className="size-20"
+            src={tickSquareIcon}
+          />
+          <div className="flex w-full flex-col items-center gap-2">
+            <h2 className="text-center font-heading text-xl leading-7 font-semibold text-black">
+              {content.title}
+            </h2>
+            <p className="text-center font-heading text-base leading-5 font-normal text-zinc-600">
+              {content.description}
+            </p>
+          </div>
+          <button
+            className="flex h-14 w-full items-center justify-center rounded-xl bg-primary px-6 font-heading text-base leading-6 font-medium text-white transition hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
+            onClick={onClose}
+            type="button"
+          >
+            {messages.ok}
+          </button>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function ParkingRejectDialog({
+  isSaving,
+  locale,
+  onClose,
+  onConfirm,
+  onSelectReason,
+  reason,
+}: {
+  isSaving: boolean
+  locale: SupportedLocale
+  onClose: () => void
+  onConfirm: () => void
+  onSelectReason: (_reason: ParkingRejectionReasonCode) => void
+  reason: ParkingRejectionReasonCode | null
+}) {
+  const messages = getParkingMessages(locale)
+  const options: RejectionReasonOption[] = [
+    { label: messages.rejectionReasonDuplicate, value: 'duplicate' },
+    { label: messages.rejectionReasonIncompleteData, value: 'incomplete_data' },
+    {
+      label: messages.rejectionReasonNotMeetingRequirements,
+      value: 'not_meeting_requirements',
+    },
+  ]
+  const canConfirm = reason !== null && !isSaving
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/20 p-6 backdrop-blur-[3px]">
+      <section
+        aria-modal="true"
+        className="w-full max-w-[24.5625rem] overflow-hidden rounded-[10px] bg-white px-4 pt-4 pb-6 shadow-[0_16px_48px_rgb(0_0_0_/_0.18)] sm:px-5"
+        role="dialog"
+      >
+        <div className="flex h-16 items-center justify-between px-1 py-2">
+          <div className="max-w-[16rem] sm:max-w-[17rem]">
+            <h2 className="truncate font-heading text-xl leading-7 font-normal text-black">
+              {messages.rejectDialogTitle}
+            </h2>
+            <p className="font-heading text-xs font-medium leading-4 tracking-wide text-zinc-600">
+              {messages.rejectDialogSubtitle}
+            </p>
+          </div>
+          <button
+            aria-label={messages.close}
+            className="flex size-12 items-center justify-center text-zinc-600 transition hover:text-text-primary"
+            onClick={onClose}
+            type="button"
+          >
+            <span className="text-2xl leading-none">×</span>
+          </button>
+        </div>
+
+        <div className="flex flex-col items-start">
+          {options.map((option) => {
+            const isSelected = reason === option.value
+
+            return (
+              <button
+                className={cn(
+                  'flex w-full items-center justify-between rounded-[18px] pr-3 text-left transition focus:outline-none',
+                  isSelected ? 'bg-surface' : 'bg-transparent hover:bg-surface-muted',
+                )}
+                key={option.value}
+                onClick={() => onSelectReason(option.value)}
+                type="button"
+              >
+                <div className="min-w-0 flex-1 px-4 py-3.5">
+                  <span className="block font-heading text-base font-normal leading-5 text-black">
+                    {option.label}
+                  </span>
+                </div>
+                <img
+                  alt=""
+                  aria-hidden="true"
+                  className="size-6 shrink-0"
+                  src={isSelected ? radioOnIcon : radioOffIcon}
+                />
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="w-full px-1 pt-4">
+          <button
+            className={cn(
+              'flex h-14 w-full items-center justify-center rounded-[14px] px-6 font-heading text-base leading-6 font-medium tracking-tight transition',
+              canConfirm
+                ? 'bg-primary text-white hover:bg-primary-dark'
+                : 'cursor-not-allowed bg-[#F2F4F7] text-[#98A2B3]',
+            )}
+            disabled={!canConfirm}
+            onClick={onConfirm}
+            type="button"
+          >
+            {messages.rejectDialogDone}
+          </button>
+        </div>
+      </section>
+    </div>
+  )
+}
+
 function getErrorDetails(error: unknown) {
   if (error instanceof Error) {
     return error.message
@@ -106,6 +267,7 @@ export function ParkingAdminPage() {
   const {
     activePanel,
     closePanel,
+    navigationKey,
     showEditParking,
     showParkingDetails,
     showParkingList,
@@ -124,6 +286,8 @@ export function ParkingAdminPage() {
   const [editingParkingId, setEditingParkingId] = useState<string | null>(null)
   const [successDialogContent, setSuccessDialogContent] =
     useState<SuccessDialogContent | null>(null)
+  const [approvalDialogContent, setApprovalDialogContent] =
+    useState<SuccessDialogContent | null>(null)
   const [mapRefreshKey, setMapRefreshKey] = useState(0)
   const [isSavingParking, setIsSavingParking] = useState(false)
   const [saveParkingError, setSaveParkingError] = useState<string | null>(null)
@@ -131,6 +295,11 @@ export function ParkingAdminPage() {
   const [statusError, setStatusError] = useState<string | null>(null)
   const [detailsMode, setDetailsMode] = useState<'default' | 'request'>('default')
   const [requestsDefaultTab, setRequestsDefaultTab] = useState<'pending' | 'approved' | 'rejected'>('pending')
+  const [selectedAuthor, setSelectedAuthor] = useState<ParkingAuthor | null>(null)
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
+  const [rejectionReason, setRejectionReason] =
+    useState<ParkingRejectionReasonCode | null>(null)
+  const authorProfileReturnPanelRef = useRef<ReturnType<typeof useParkingAdminPanels>['activePanel']>(null)
   const previousPanelRef = useRef(activePanel)
   const isParkingFormOpen =
     activePanel === 'add-parking' || activePanel === 'edit-parking'
@@ -158,10 +327,20 @@ export function ParkingAdminPage() {
     )
   }, [activePanel, addParkingDraft])
 
+  useEffect(() => {
+    setSelectedAuthor(null)
+    setIsRejectDialogOpen(false)
+    setRejectionReason(null)
+    setApprovalDialogContent(null)
+    setStatusError(null)
+    authorProfileReturnPanelRef.current = null
+  }, [navigationKey])
+
   function handleSelectParking(parking: ParkingMapItem | ParkingListItem, fromRequests = false) {
     setEditingParkingId(null)
     setSaveParkingError(null)
     setStatusError(null)
+    setSelectedAuthor(null)
     setDetailsMode(fromRequests ? 'request' : 'default')
     setSelectedParking(parking)
     setFocusedParking({
@@ -179,8 +358,12 @@ export function ParkingAdminPage() {
       await updateParkingStatus(selectedParking.id, 'approved')
       setMapRefreshKey((k) => k + 1)
       setSelectedParking(null)
+      setSelectedAuthor(null)
       setRequestsDefaultTab('approved')
-      showRequests()
+      setApprovalDialogContent({
+        description: messages.approvalDialogSubtitle,
+        title: messages.approvalDialogTitle,
+      })
     } catch (error) {
       const details = getErrorDetails(error)
       setStatusError(details ? `${messages.unableToUpdateStatus} ${details}` : messages.unableToUpdateStatus)
@@ -189,14 +372,31 @@ export function ParkingAdminPage() {
     }
   }
 
-  async function handleRejectParking() {
+  function handleOpenRejectDialog() {
     if (!selectedParking || isUpdatingStatus) return
+
+    setRejectionReason(null)
+    setIsRejectDialogOpen(true)
+  }
+
+  function handleCloseRejectDialog() {
+    if (isUpdatingStatus) return
+
+    setIsRejectDialogOpen(false)
+    setRejectionReason(null)
+  }
+
+  async function handleRejectParking() {
+    if (!selectedParking || isUpdatingStatus || !rejectionReason) return
     setIsUpdatingStatus(true)
     setStatusError(null)
     try {
-      await updateParkingStatus(selectedParking.id, 'rejected')
+      await updateParkingStatus(selectedParking.id, 'rejected', rejectionReason)
       setMapRefreshKey((k) => k + 1)
       setSelectedParking(null)
+      setSelectedAuthor(null)
+      setIsRejectDialogOpen(false)
+      setRejectionReason(null)
       setRequestsDefaultTab('rejected')
       showRequests()
     } catch (error) {
@@ -210,6 +410,34 @@ export function ParkingAdminPage() {
   function handleCloseParkingDetails() {
     setSelectedParking(null)
     setEditingParkingId(null)
+    setSelectedAuthor(null)
+    setIsRejectDialogOpen(false)
+    setRejectionReason(null)
+    setApprovalDialogContent(null)
+    authorProfileReturnPanelRef.current = null
+    showParkingList()
+  }
+
+  function handleOpenAuthorProfile(author: ParkingAuthor) {
+    if (!author.id) {
+      return
+    }
+
+    setSelectedAuthor(author)
+    authorProfileReturnPanelRef.current = activePanel
+    closePanel()
+  }
+
+  function handleCloseAuthorProfile() {
+    setSelectedAuthor(null)
+    const returnPanel = authorProfileReturnPanelRef.current
+    authorProfileReturnPanelRef.current = null
+
+    if (returnPanel === 'parking-details' && selectedParking) {
+      showParkingDetails()
+      return
+    }
+
     showParkingList()
   }
 
@@ -480,9 +708,18 @@ export function ParkingAdminPage() {
               onApprove={() => void handleApproveParking()}
               onClose={handleCloseParkingDetails}
               onEdit={(parking) => void handleOpenEditParking(parking)}
-              onReject={() => void handleRejectParking()}
+              onReject={handleOpenRejectDialog}
+              onOpenAuthorProfile={handleOpenAuthorProfile}
               parking={selectedParking}
               statusError={statusError}
+            />
+          </div>
+        ) : null}
+        {selectedAuthor?.id ? (
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-30 w-full max-w-[28rem]">
+            <ParkingUserProfilePanel
+              author={selectedAuthor}
+              onClose={handleCloseAuthorProfile}
             />
           </div>
         ) : null}
@@ -492,7 +729,28 @@ export function ParkingAdminPage() {
             onClose={() => setSuccessDialogContent(null)}
           />
         ) : null}
+        {approvalDialogContent ? (
+          <ParkingApprovalDialog
+            content={approvalDialogContent}
+            onClose={() => {
+              setApprovalDialogContent(null)
+              showRequests()
+            }}
+          />
+        ) : null}
+        {isRejectDialogOpen ? (
+          <ParkingRejectDialog
+            isSaving={isUpdatingStatus}
+            locale={locale}
+            onClose={handleCloseRejectDialog}
+            onConfirm={() => void handleRejectParking()}
+            onSelectReason={setRejectionReason}
+            reason={rejectionReason}
+          />
+        ) : null}
       </div>
     </APIProvider>
   )
 }
+
+

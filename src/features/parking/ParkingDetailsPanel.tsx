@@ -34,6 +34,7 @@ import { useParkingReviews } from '../../hooks/useParkingReviews'
 import { useSystemLocale } from '../../hooks/useSystemLocale'
 import { cn } from '../../lib/cn'
 import type {
+  ParkingAuthor,
   ParkingComplaint,
   ParkingDetailItem,
   ParkingPhoto,
@@ -48,6 +49,7 @@ type ParkingDetailsPanelProps = {
   onClose: () => void
   onEdit: (_parking: ParkingDetailItem) => void
   onReject?: () => void
+  onOpenAuthorProfile?: (_author: ParkingAuthor) => void
   parking: ParkingDetailItem
   statusError?: string | null
 }
@@ -474,6 +476,7 @@ export function ParkingDetailsPanel({
   onClose,
   onEdit,
   onReject,
+  onOpenAuthorProfile,
   parking,
   statusError = null,
 }: ParkingDetailsPanelProps) {
@@ -522,6 +525,7 @@ export function ParkingDetailsPanel({
   const canDragHeroPhotos = heroPhotos.length > 1
   const authorName = author.fullName?.trim() || messages.anonymousUser
   const authorInitial = authorName.charAt(0).toUpperCase()
+  const canOpenAuthorProfile = Boolean(author.id && onOpenAuthorProfile)
 
   function cleanupHeroMouseListeners() {
     window.removeEventListener('mousemove', handleHeroMouseMove)
@@ -810,21 +814,37 @@ export function ParkingDetailsPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 pb-6">
-        <div className="flex items-center gap-4 py-4">
-          {author.avatarUrl ? (
-            <img
-              alt={authorName}
-              className="size-10 shrink-0 rounded-full object-cover"
-              src={author.avatarUrl}
-            />
-          ) : (
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#E6DBFF] font-heading text-base font-medium text-[#5B41A8]">
-              {authorInitial}
+        <div className="py-4">
+          <button
+            className={cn(
+              'flex items-center gap-4 rounded-xl text-left transition',
+              canOpenAuthorProfile
+                ? 'px-2 py-2 hover:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30'
+                : 'cursor-default px-2 py-2',
+            )}
+            disabled={!canOpenAuthorProfile}
+            onClick={() => {
+              if (author.id && onOpenAuthorProfile) {
+                onOpenAuthorProfile(author)
+              }
+            }}
+            type="button"
+          >
+            {author.avatarUrl ? (
+              <img
+                alt={authorName}
+                className="size-10 shrink-0 rounded-full object-cover"
+                src={author.avatarUrl}
+              />
+            ) : (
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#E6DBFF] font-heading text-base font-medium text-[#5B41A8]">
+                {authorInitial}
+              </span>
+            )}
+            <span className="font-heading text-[16px] leading-6 font-medium text-on-surface">
+              {isAuthorLoading ? messages.loading : authorName}
             </span>
-          )}
-          <span className="font-heading text-[16px] leading-6 font-medium text-on-surface">
-            {isAuthorLoading ? messages.loading : authorName}
-          </span>
+          </button>
         </div>
 
         <div className="grid grid-cols-2 gap-2">

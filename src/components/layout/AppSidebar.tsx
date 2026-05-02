@@ -54,7 +54,7 @@ function SidebarButton({
         'relative flex h-12 items-center rounded-[10px] transition',
         'focus:outline-none focus:ring-2 focus:ring-primary/30',
         isActive ? 'bg-surface' : 'hover:bg-surface',
-        isExpanded ? 'w-full gap-2' : 'w-12 justify-center',
+        isExpanded ? 'w-full gap-2 pr-2' : 'w-12 justify-center',
       )}
       onClick={(event) => {
         stopSidebarToggle(event)
@@ -108,20 +108,25 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
     requestCounts.pending > 0
       ? formatCompactCount(requestCounts.pending, locale)
       : undefined
+
+  function navigateTo(nextPanel: () => void) {
+    nextPanel()
+  }
+
   const navigationItems: SidebarItem[] = [
     {
       activeIcon: menuBlueIcon,
       icon: menuGrayIcon,
       id: 'parking-list',
       label: 'Parking list',
-      onClick: showParkingList,
+      onClick: () => navigateTo(showParkingList),
     },
     {
       activeIcon: addParkingBlueIcon,
       icon: addParkingGrayIcon,
       id: 'add-parking',
       label: 'Add parking',
-      onClick: showAddParking,
+      onClick: () => navigateTo(showAddParking),
     },
     {
       activeIcon: requestsBlueIcon,
@@ -129,7 +134,7 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
       icon: requestsGrayIcon,
       id: 'requests',
       label: 'Requests',
-      onClick: showRequests,
+      onClick: () => navigateTo(showRequests),
     },
     {
       activeIcon: reviewsBlueIcon,

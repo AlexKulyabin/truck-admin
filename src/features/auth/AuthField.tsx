@@ -29,10 +29,10 @@ export function AuthField({
         autoComplete={autoComplete}
         aria-invalid={isInvalid ? 'true' : 'false'}
         className={cn(
-          'h-10 w-full rounded-lg border bg-surface px-4 font-sans text-base font-normal leading-4 text-text-primary outline-none transition placeholder:text-text-secondary focus:ring-2',
+          'h-10 w-full rounded-lg border bg-surface px-4 font-sans text-base font-normal leading-4 text-text-primary outline-none transition placeholder:text-text-secondary',
           isInvalid
-            ? 'border-danger focus:border-danger focus:ring-danger/20'
-            : 'border-transparent focus:border-link focus:ring-link/20',
+            ? 'border-danger focus:border-danger'
+            : 'border-transparent focus:border-link',
         )}
         onChange={onChange}
         placeholder={placeholder}

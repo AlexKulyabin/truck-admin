@@ -11,6 +11,7 @@ export type ParkingAdminPanel =
 export type ParkingAdminPanelsContextValue = {
   activePanel: ParkingAdminPanel
   closePanel: () => void
+  navigationKey: number
   showAddParking: () => void
   showEditParking: () => void
   showParkingDetails: () => void

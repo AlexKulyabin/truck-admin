@@ -11,7 +11,7 @@ type WaitForUserProfileOptions = {
   delayMs?: number
 }
 
-type UserProfilePreview = Pick<UserProfile, 'avatar_url' | 'full_name'>
+type UserProfilePreview = Pick<UserProfile, 'avatar_url' | 'full_name' | 'id'>
 
 function normalizeUserProfile(profile: UserProfile): UserProfile {
   return {
@@ -42,7 +42,7 @@ export async function getUserProfilePreview(
   const client = getSupabaseClient()
   const { data, error } = await client
     .from(SUPABASE_TABLES.USERS)
-    .select('full_name, avatar_url')
+    .select('id, full_name, avatar_url')
     .eq('id', userId)
     .maybeSingle()
 

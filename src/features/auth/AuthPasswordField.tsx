@@ -34,10 +34,10 @@ export function AuthPasswordField({
         {label}
       </span>
       <span
-        className={`flex h-10 w-full items-center rounded-lg border bg-surface transition focus-within:ring-2 ${
+        className={`flex h-10 w-full items-center rounded-lg border bg-surface transition ${
           isInvalid
-            ? 'border-danger focus-within:border-danger focus-within:ring-danger/20'
-            : 'border-transparent focus-within:border-link focus-within:ring-link/20'
+            ? 'border-danger focus-within:border-danger'
+            : 'border-transparent focus-within:border-link'
         }`}
       >
         <input

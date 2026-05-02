@@ -1,11 +1,16 @@
 import { useMemo, useState } from 'react'
-import { getParkingMessages, type SupportedLocale } from '../../constants/parkingI18n'
+import {
+  formatComplaintReportLabel,
+  getParkingMessages,
+  type SupportedLocale,
+} from '../../constants/parkingI18n'
 import { useSystemLocale } from '../../hooks/useSystemLocale'
 import { cn } from '../../lib/cn'
 import type { ParkingComplaint } from '../../types/parking'
 
 type ParkingComplaintCardProps = {
   complaint: ParkingComplaint
+  showActions?: boolean
 }
 
 function formatComplaintDate(value: string, locale: SupportedLocale) {
@@ -16,7 +21,10 @@ function formatComplaintDate(value: string, locale: SupportedLocale) {
   }).format(new Date(value))
 }
 
-export function ParkingComplaintCard({ complaint }: ParkingComplaintCardProps) {
+export function ParkingComplaintCard({
+  complaint,
+  showActions = true,
+}: ParkingComplaintCardProps) {
   const locale = useSystemLocale()
   const messages = getParkingMessages(locale)
   const [isExpanded, setIsExpanded] = useState(false)
@@ -27,7 +35,7 @@ export function ParkingComplaintCard({ complaint }: ParkingComplaintCardProps) {
     [complaint.createdAt, locale],
   )
   const hasLongComment = (complaint.comment?.trim().length ?? 0) > 180
-  const reportLabel = complaint.reportLabel?.trim() || null
+  const reportLabel = formatComplaintReportLabel(complaint.reportLabel, locale)
 
   return (
     <article className="space-y-3 py-1">
@@ -82,20 +90,22 @@ export function ParkingComplaintCard({ complaint }: ParkingComplaintCardProps) {
         </div>
       </div>
 
-      <div className="flex items-start gap-2 pt-2 pb-4">
-        <button
-          className="flex h-12 flex-1 items-center justify-center rounded-xl bg-surface font-heading text-sm leading-5 font-medium text-text-primary transition hover:bg-surface-muted"
-          type="button"
-        >
-          {messages.delete}
-        </button>
-        <button
-          className="flex h-12 flex-1 items-center justify-center rounded-xl bg-primary font-heading text-sm leading-5 font-medium text-white transition hover:bg-primary-dark"
-          type="button"
-        >
-          {messages.details}
-        </button>
-      </div>
+      {showActions ? (
+        <div className="flex items-start gap-2 pt-2 pb-4">
+          <button
+            className="flex h-12 flex-1 items-center justify-center rounded-xl bg-surface font-heading text-sm leading-5 font-medium text-text-primary transition hover:bg-surface-muted"
+            type="button"
+          >
+            {messages.delete}
+          </button>
+          <button
+            className="flex h-12 flex-1 items-center justify-center rounded-xl bg-primary font-heading text-sm leading-5 font-medium text-white transition hover:bg-primary-dark"
+            type="button"
+          >
+            {messages.details}
+          </button>
+        </div>
+      ) : null}
     </article>
   )
 }

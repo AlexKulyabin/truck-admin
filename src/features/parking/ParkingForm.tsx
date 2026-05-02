@@ -115,7 +115,7 @@ export function ParkingForm({
         <label className="block">
           <span className="text-sm font-medium text-text-primary">Name</span>
           <input
-            className="mt-1 w-full rounded-md border border-form-border px-3 py-2 text-sm outline-none focus:border-map-marker focus:ring-2 focus:ring-map-marker/20"
+            className="mt-1 w-full rounded-md border border-form-border px-3 py-2 text-sm outline-none focus:border-map-marker"
             disabled={isSubmitting}
             onChange={(event) => updateField('name', event.target.value)}
             placeholder="North Gate Truck Parking"
@@ -129,7 +129,7 @@ export function ParkingForm({
           <label className="block">
             <span className="text-sm font-medium text-text-primary">Latitude</span>
             <input
-              className="mt-1 w-full rounded-md border border-form-border px-3 py-2 text-sm outline-none focus:border-map-marker focus:ring-2 focus:ring-map-marker/20"
+              className="mt-1 w-full rounded-md border border-form-border px-3 py-2 text-sm outline-none focus:border-map-marker"
               disabled={isSubmitting}
               onChange={(event) => updateField('latitude', event.target.value)}
               placeholder="55.7558"
@@ -142,7 +142,7 @@ export function ParkingForm({
           <label className="block">
             <span className="text-sm font-medium text-text-primary">Longitude</span>
             <input
-              className="mt-1 w-full rounded-md border border-form-border px-3 py-2 text-sm outline-none focus:border-map-marker focus:ring-2 focus:ring-map-marker/20"
+              className="mt-1 w-full rounded-md border border-form-border px-3 py-2 text-sm outline-none focus:border-map-marker"
               disabled={isSubmitting}
               onChange={(event) => updateField('longitude', event.target.value)}
               placeholder="37.6173"
@@ -157,7 +157,7 @@ export function ParkingForm({
         <label className="block">
           <span className="text-sm font-medium text-text-primary">Capacity</span>
           <input
-            className="mt-1 w-full rounded-md border border-form-border px-3 py-2 text-sm outline-none focus:border-map-marker focus:ring-2 focus:ring-map-marker/20"
+            className="mt-1 w-full rounded-md border border-form-border px-3 py-2 text-sm outline-none focus:border-map-marker"
             disabled={isSubmitting}
             onChange={(event) => updateField('capacity', event.target.value)}
             placeholder="24"
@@ -170,7 +170,7 @@ export function ParkingForm({
         <label className="block">
           <span className="text-sm font-medium text-text-primary">Notes</span>
           <textarea
-            className="mt-1 min-h-24 w-full rounded-md border border-form-border px-3 py-2 text-sm outline-none focus:border-map-marker focus:ring-2 focus:ring-map-marker/20"
+            className="mt-1 min-h-24 w-full rounded-md border border-form-border px-3 py-2 text-sm outline-none focus:border-map-marker"
             disabled={isSubmitting}
             onChange={(event) => updateField('notes', event.target.value)}
             placeholder="Security, fuel station, shower, overnight stay..."
