@@ -5,6 +5,7 @@ export type ParkingAdminPanel =
   | 'edit-parking'
   | 'parking-details'
   | 'parking-list'
+  | 'reviews'
   | 'requests'
   | null
 
@@ -17,6 +18,7 @@ export type ParkingAdminPanelsContextValue = {
   showParkingDetails: () => void
   showParkingList: () => void
   showRequests: () => void
+  showReviews: () => void
 }
 
 export const ParkingAdminPanelsContext = createContext<

@@ -97,6 +97,7 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
     showAddParking,
     showParkingList,
     showRequests,
+    showReviews,
   } = useParkingAdminPanels()
   const locale = useSystemLocale()
   const { requestCounts } = useParkingRequestCounts('')
@@ -104,6 +105,7 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
   const isParkingSectionActive =
     activePanel === 'parking-details' || activePanel === 'parking-list'
   const isRequestsSectionActive = activePanel === 'requests'
+  const isReviewsSectionActive = activePanel === 'reviews'
   const pendingRequestsBadge =
     requestCounts.pending > 0
       ? formatCompactCount(requestCounts.pending, locale)
@@ -141,6 +143,7 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
       icon: reviewsGrayIcon,
       id: 'reviews',
       label: 'Reviews',
+      onClick: () => navigateTo(showReviews),
     },
   ]
 
@@ -181,7 +184,8 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
               isActive={
                 (item.id === 'parking-list' && isParkingSectionActive) ||
                 (item.id === 'add-parking' && activePanel === 'add-parking') ||
-                (item.id === 'requests' && isRequestsSectionActive)
+                (item.id === 'requests' && isRequestsSectionActive) ||
+                (item.id === 'reviews' && isReviewsSectionActive)
               }
               isExpanded={isExpanded}
             />
@@ -200,7 +204,8 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
             isActive={
               (item.id === 'parking-list' && isParkingSectionActive) ||
               (item.id === 'add-parking' && activePanel === 'add-parking') ||
-              (item.id === 'requests' && isRequestsSectionActive)
+              (item.id === 'requests' && isRequestsSectionActive) ||
+              (item.id === 'reviews' && isReviewsSectionActive)
             }
             isExpanded={isExpanded}
           />

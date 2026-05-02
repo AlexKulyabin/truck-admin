@@ -13,6 +13,10 @@ type Messages = {
   complaints: string
   approve: string
   delete: string
+  deleteParkingDialogCancel: string
+  deleteParkingDialogConfirm: string
+  deleteParkingDialogSubtitle: string
+  deleteParkingDialogTitle: string
   details: string
   edit: string
   editingParking: string
@@ -47,6 +51,7 @@ type Messages = {
   noPhoto: string
   noPhotos: string
   noReviews: string
+  noReviewParkings: string
   noProfileReviews: string
   noProfileComplaints: string
   parkingDoesNotExist: string
@@ -67,6 +72,8 @@ type Messages = {
   shower: string
   spots: string
   upTo: string
+  unableToDeleteParking: string
+  unableToLoadReviewParkings: string
   unableToLoadParkingList: string
   unableToSaveParking: string
   unableToUpdateParking: string
@@ -86,7 +93,11 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     clearSearch: 'Clear search',
     complaints: 'Complaints',
     delete: 'Delete',
-    details: 'More detailed',
+    deleteParkingDialogCancel: 'Cancel',
+    deleteParkingDialogConfirm: 'Delete',
+    deleteParkingDialogSubtitle: 'The parking will be deleted and will not be displayed on the map',
+    deleteParkingDialogTitle: 'Delete parking?',
+    details: 'More details',
     edit: 'Edit',
     editingParking: 'Editing parking',
     enterAddress: 'Enter address',
@@ -120,6 +131,7 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     noPhoto: 'No photo',
     noPhotos: 'No photos for this parking yet.',
     noReviews: 'No reviews for this parking yet.',
+    noReviewParkings: 'No parkings with reviews or complaints found.',
     noProfileReviews: 'There are no reviews',
     noProfileComplaints: 'There are no complaints',
     parkingDoesNotExist: 'Parking does not exist',
@@ -140,6 +152,8 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     shower: 'Shower',
     spots: 'spots',
     upTo: 'Up to',
+    unableToDeleteParking: 'Unable to delete parking. Please try again.',
+    unableToLoadReviewParkings: 'Unable to load review parkings.',
     unableToLoadParkingList: 'Unable to load parking list.',
     unableToSaveParking: 'Unable to save parking. Please try again.',
     unableToUpdateParking: 'Unable to update parking. Please try again.',
@@ -157,6 +171,10 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     clearSearch: '\u041e\u0447\u0438\u0441\u0442\u0438\u0442\u044c \u043f\u043e\u0438\u0441\u043a',
     complaints: '\u0416\u0430\u043b\u043e\u0431\u044b',
     delete: '\u0423\u0434\u0430\u043b\u0438\u0442\u044c',
+    deleteParkingDialogCancel: '\u041e\u0442\u043c\u0435\u043d\u0430',
+    deleteParkingDialogConfirm: '\u0423\u0434\u0430\u043b\u0438\u0442\u044c',
+    deleteParkingDialogSubtitle: '\u041f\u0430\u0440\u043a\u043e\u0432\u043a\u0430 \u0431\u0443\u0434\u0435\u0442 \u0443\u0434\u0430\u043b\u0435\u043d\u0430 \u0438 \u043d\u0435 \u0431\u0443\u0434\u0435\u0442 \u043e\u0442\u043e\u0431\u0440\u0430\u0436\u0430\u0442\u044c\u0441\u044f \u043d\u0430 \u043a\u0430\u0440\u0442\u0435',
+    deleteParkingDialogTitle: '\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0443?',
     details: '\u041f\u043e\u0434\u0440\u043e\u0431\u043d\u0435\u0435',
     edit: '\u0420\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c',
     editingParking: '\u0420\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438',
@@ -191,6 +209,7 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
   noPhoto: '\u041d\u0435\u0442 \u0444\u043e\u0442\u043e',
   noPhotos: '\u0423 \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u0444\u043e\u0442\u043e\u0433\u0440\u0430\u0444\u0438\u0439.',
     noReviews: '\u0414\u043b\u044f \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u043e\u0442\u0437\u044b\u0432\u043e\u0432.',
+    noReviewParkings: '\u041f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u0441 \u043e\u0442\u0437\u044b\u0432\u0430\u043c\u0438 \u0438\u043b\u0438 \u0436\u0430\u043b\u043e\u0431\u0430\u043c\u0438 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b.',
     noProfileReviews: '\u041d\u0435\u0442 \u043e\u0442\u0437\u044b\u0432\u043e\u0432',
     noProfileComplaints: '\u041d\u0435\u0442 \u0436\u0430\u043b\u043e\u0431',
     parkingDoesNotExist: '\u041f\u0430\u0440\u043a\u043e\u0432\u043a\u0430 \u043d\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442',
@@ -211,6 +230,8 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     shower: '\u0414\u0443\u0448',
     spots: '\u043c\u0435\u0441\u0442',
     upTo: '\u0414\u043e',
+    unableToDeleteParking: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0443\u0434\u0430\u043b\u0438\u0442\u044c \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0443. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0435 \u0440\u0430\u0437.',
+    unableToLoadReviewParkings: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u0441 \u043e\u0442\u0437\u044b\u0432\u0430\u043c\u0438.',
     unableToLoadParkingList: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0441\u043f\u0438\u0441\u043e\u043a \u043f\u0430\u0440\u043a\u043e\u0432\u043e\u043a.',
     unableToSaveParking: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0443. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0435 \u0440\u0430\u0437.',
     unableToUpdateParking: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0431\u043d\u043e\u0432\u0438\u0442\u044c \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0443. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0435 \u0440\u0430\u0437.',

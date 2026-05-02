@@ -9,6 +9,10 @@ import { cn } from '../../lib/cn'
 import type { ParkingComplaint } from '../../types/parking'
 
 type ParkingComplaintCardProps = {
+  actionDeleteLabel?: string
+  actionDetailsLabel?: string
+  onDelete?: () => void
+  onDetails?: () => void
   complaint: ParkingComplaint
   showActions?: boolean
 }
@@ -22,6 +26,10 @@ function formatComplaintDate(value: string, locale: SupportedLocale) {
 }
 
 export function ParkingComplaintCard({
+  actionDeleteLabel,
+  actionDetailsLabel,
+  onDelete,
+  onDetails,
   complaint,
   showActions = true,
 }: ParkingComplaintCardProps) {
@@ -93,16 +101,18 @@ export function ParkingComplaintCard({
       {showActions ? (
         <div className="flex items-start gap-2 pt-2 pb-4">
           <button
-            className="flex h-12 flex-1 items-center justify-center rounded-xl bg-surface font-heading text-sm leading-5 font-medium text-text-primary transition hover:bg-surface-muted"
+            className="flex h-10 flex-1 items-center justify-center rounded-xl bg-surface font-heading text-sm leading-5 font-medium text-text-primary transition hover:bg-surface-muted"
+            onClick={onDelete}
             type="button"
           >
-            {messages.delete}
+            {actionDeleteLabel ?? messages.delete}
           </button>
           <button
-            className="flex h-12 flex-1 items-center justify-center rounded-xl bg-primary font-heading text-sm leading-5 font-medium text-white transition hover:bg-primary-dark"
+            className="flex h-10 flex-1 items-center justify-center rounded-xl bg-primary font-heading text-sm leading-5 font-medium text-white transition hover:bg-primary-dark"
+            onClick={onDetails}
             type="button"
           >
-            {messages.details}
+            {actionDetailsLabel ?? messages.details}
           </button>
         </div>
       ) : null}

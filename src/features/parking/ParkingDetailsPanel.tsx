@@ -48,6 +48,7 @@ type ParkingDetailsPanelProps = {
   onApprove?: () => void
   onClose: () => void
   onEdit: (_parking: ParkingDetailItem) => void
+  onDelete?: () => void
   onReject?: () => void
   onOpenAuthorProfile?: (_author: ParkingAuthor) => void
   parking: ParkingDetailItem
@@ -475,6 +476,7 @@ export function ParkingDetailsPanel({
   onApprove,
   onClose,
   onEdit,
+  onDelete,
   onReject,
   onOpenAuthorProfile,
   parking,
@@ -870,7 +872,9 @@ export function ParkingDetailsPanel({
           ) : (
             <>
               <button
-                className="flex h-12 items-center justify-center gap-2 rounded-xl bg-surface text-sm font-medium text-text-primary shadow-card transition hover:bg-[#FFF4F4]"
+                className="flex h-12 items-center justify-center gap-2 rounded-xl bg-surface text-sm font-medium text-text-primary shadow-card transition hover:bg-[#FFF4F4] disabled:opacity-50"
+                disabled={!onDelete}
+                onClick={onDelete}
                 type="button"
               >
                 <img alt="" aria-hidden="true" className="size-5" src={trashIcon} />

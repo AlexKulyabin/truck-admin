@@ -30,6 +30,10 @@ export function ParkingAdminPanelsProvider({ children }: PropsWithChildren) {
         setNavigationKey((currentValue) => currentValue + 1)
         setActivePanel('parking-list')
       },
+      showReviews: () => {
+        setNavigationKey((currentValue) => currentValue + 1)
+        setActivePanel('reviews')
+      },
       showRequests: () => {
         setNavigationKey((currentValue) => currentValue + 1)
         setActivePanel('requests')

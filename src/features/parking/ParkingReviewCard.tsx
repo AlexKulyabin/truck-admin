@@ -6,6 +6,10 @@ import type { ParkingReview } from '../../types/parking'
 import { cn } from '../../lib/cn'
 
 type ParkingReviewCardProps = {
+  actionDeleteLabel?: string
+  actionDetailsLabel?: string
+  onDelete?: () => void
+  onDetails?: () => void
   review: ParkingReview
   showActions?: boolean
   showAuthorName?: boolean
@@ -35,6 +39,10 @@ function renderStars(score: number) {
 }
 
 export function ParkingReviewCard({
+  actionDeleteLabel,
+  actionDetailsLabel,
+  onDelete,
+  onDetails,
   review,
   showActions = true,
   showAuthorName = true,
@@ -190,16 +198,18 @@ export function ParkingReviewCard({
       {showActions ? (
         <div className="flex items-start gap-2 pt-2 pb-4">
           <button
-            className="flex h-12 flex-1 items-center justify-center rounded-xl bg-surface font-heading text-sm leading-5 font-medium text-text-primary transition hover:bg-surface-muted"
+            className="flex h-10 flex-1 items-center justify-center rounded-xl bg-surface font-heading text-sm leading-5 font-medium text-text-primary transition hover:bg-surface-muted"
+            onClick={onDelete}
             type="button"
           >
-            {messages.delete}
+            {actionDeleteLabel ?? messages.delete}
           </button>
           <button
-            className="flex h-12 flex-1 items-center justify-center rounded-xl bg-primary font-heading text-sm leading-5 font-medium text-white transition hover:bg-primary-dark"
+            className="flex h-10 flex-1 items-center justify-center rounded-xl bg-primary font-heading text-sm leading-5 font-medium text-white transition hover:bg-primary-dark"
+            onClick={onDetails}
             type="button"
           >
-            {messages.details}
+            {actionDetailsLabel ?? messages.details}
           </button>
         </div>
       ) : null}

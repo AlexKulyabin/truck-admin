@@ -64,6 +64,11 @@ type ParkingRequestRow = Pick<
   'address' | 'created_at' | 'id' | 'latitude' | 'longitude' | 'rating' | 'status'
 >
 
+type ParkingReviewFeedRow = Pick<
+  ParkingRow,
+  'address' | 'created_at' | 'id' | 'latitude' | 'longitude' | 'rating'
+>
+
 type FilteredParkingResponseItem = {
   address?: unknown
   count?: unknown
@@ -218,6 +223,22 @@ function getSupabaseErrorMessage(error: unknown) {
   }
 
   return 'Unknown Supabase error'
+}
+
+function getStoragePathFromPublicUrl(url: string) {
+  try {
+    const parsedUrl = new URL(url)
+    const marker = `/object/public/${PARKING_CONTENT_BUCKET}/`
+    const markerIndex = parsedUrl.pathname.indexOf(marker)
+
+    if (markerIndex === -1) {
+      return null
+    }
+
+    return decodeURIComponent(parsedUrl.pathname.slice(markerIndex + marker.length))
+  } catch {
+    return null
+  }
 }
 
 function normalizeParkingPoint(point: ParkingPointRow): ParkingPoint {
@@ -406,6 +427,87 @@ export async function listParkingItems(searchQuery: string, signal?: AbortSignal
   return (data ?? []).map((parking) =>
     normalizeParkingListItem(parking as ParkingListRow),
   )
+}
+
+export async function listReviewParkingItems(
+  searchQuery: string,
+  signal?: AbortSignal,
+) {
+  const client = getSupabaseClient()
+  const normalizedQuery = searchQuery.trim().toLowerCase()
+
+  async function loadParkingRowsByIds(parkingIds: string[]) {
+    if (parkingIds.length === 0) {
+      return [] as ParkingReviewFeedRow[]
+    }
+
+    let query = client
+      .from(SUPABASE_TABLES.PARKINGS)
+      .select('id, address, created_at, latitude, longitude, rating')
+      .in('id', parkingIds)
+      .order('created_at', { ascending: false })
+
+    if (normalizedQuery) {
+      query = query.ilike('address_lower', `%${normalizedQuery}%`)
+    }
+
+    const { data, error } = signal ? await query.abortSignal(signal) : await query
+
+    if (error) {
+      throw error
+    }
+
+    return (data ?? []) as ParkingReviewFeedRow[]
+  }
+
+  let reviewedQuery = client
+    .from(SUPABASE_TABLES.PARKINGS)
+    .select('id, address, created_at, latitude, longitude, rating')
+    .gt('reviews_count', 0)
+    .order('created_at', { ascending: false })
+
+  if (normalizedQuery) {
+    reviewedQuery = reviewedQuery.ilike('address_lower', `%${normalizedQuery}%`)
+  }
+
+  const reportsQuery = client
+    .from(SUPABASE_TABLES.REPORTS)
+    .select('parking_id')
+    .not('parking_id', 'is', null)
+
+  const [{ data: reviewedData, error: reviewedError }, { data: reportData, error: reportError }] =
+    signal
+      ? await Promise.all([reviewedQuery.abortSignal(signal), reportsQuery.abortSignal(signal)])
+      : await Promise.all([reviewedQuery, reportsQuery])
+
+  if (reviewedError) {
+    throw reviewedError
+  }
+
+  if (reportError) {
+    throw reportError
+  }
+
+  const reviewedParkings = (reviewedData ?? []) as ParkingReviewFeedRow[]
+  const reportParkingIds = Array.from(
+    new Set(
+      (reportData ?? [])
+        .map((row) =>
+          isRecord(row) && typeof row.parking_id === 'string' ? row.parking_id : null,
+        )
+        .filter((parkingId): parkingId is string => Boolean(parkingId)),
+    ),
+  )
+  const reportedParkings = await loadParkingRowsByIds(reportParkingIds)
+  const parkingsById = new Map<string, ParkingReviewFeedRow>()
+
+  for (const parking of [...reviewedParkings, ...reportedParkings]) {
+    parkingsById.set(parking.id, parking)
+  }
+
+  return Array.from(parkingsById.values())
+    .sort((left, right) => right.created_at.localeCompare(left.created_at))
+    .map((parking) => normalizeParkingListItem(parking as ParkingListRow))
 }
 
 export async function listParkingRequests(
@@ -974,6 +1076,51 @@ export async function updateParkingStatus(
 
   if (error) {
     throw new Error(`Update parking status failed: ${getSupabaseErrorMessage(error)}`)
+  }
+}
+
+export async function deleteParking(parkingId: string) {
+  const client = getSupabaseClient()
+
+  const { data: parkingPhotos, error: parkingPhotosError } = await client
+    .from(SUPABASE_TABLES.PARKING_PHOTOS)
+    .select('url')
+    .eq('parking_id', parkingId)
+
+  if (parkingPhotosError) {
+    throw new Error(`Load parking photos for delete failed: ${getSupabaseErrorMessage(parkingPhotosError)}`)
+  }
+
+  const photoUrls = ((parkingPhotos ?? []) as Array<{ url: string }>).map((photo) => photo.url)
+
+  const deletionSteps = [
+    client.from(SUPABASE_TABLES.FAVORITES).delete().eq('parking_id', parkingId),
+    client.from(SUPABASE_TABLES.PARKING_PHOTOS).delete().eq('parking_id', parkingId),
+    client.from(SUPABASE_TABLES.REPORTS).delete().eq('parking_id', parkingId),
+    client.from(SUPABASE_TABLES.REVIEWS).delete().eq('parking_id', parkingId),
+    client.from(SUPABASE_TABLES.PARKINGS).delete().eq('id', parkingId),
+  ] as const
+
+  for (const step of deletionSteps) {
+    const { error } = await step
+
+    if (error) {
+      throw new Error(`Delete parking failed: ${getSupabaseErrorMessage(error)}`)
+    }
+  }
+
+  const storagePaths = photoUrls
+    .map((url) => getStoragePathFromPublicUrl(url))
+    .filter((path): path is string => Boolean(path))
+
+  if (storagePaths.length > 0) {
+    const { error: storageError } = await client.storage
+      .from(PARKING_CONTENT_BUCKET)
+      .remove(storagePaths)
+
+    if (storageError) {
+      console.warn('Delete parking storage cleanup failed:', getSupabaseErrorMessage(storageError))
+    }
   }
 }
 

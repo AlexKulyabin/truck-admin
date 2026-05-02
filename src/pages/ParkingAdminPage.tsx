@@ -1,6 +1,7 @@
 ﻿import { APIProvider } from '@vis.gl/react-google-maps'
 import { useEffect, useRef, useState } from 'react'
 import tickSquareIcon from '../assets/icons/tick-square.svg'
+import trashBigIcon from '../assets/icons/trash-big.svg'
 import radioOffIcon from '../assets/icons/radio-off.svg'
 import radioOnIcon from '../assets/icons/radio-on.svg'
 import { ParkingMap } from '../components/maps/ParkingMap'
@@ -21,6 +22,7 @@ import {
 } from '../features/parking/addParkingDraft'
 import { ParkingDetailsPanel } from '../features/parking/ParkingDetailsPanel'
 import { ParkingListPanel } from '../features/parking/ParkingListPanel'
+import { ParkingReviewsPanel } from '../features/parking/ParkingReviewsPanel'
 import { ParkingUserProfilePanel } from '../features/parking/ParkingUserProfilePanel'
 import { RequestsPanel } from '../features/parking/RequestsPanel'
 import { useParkingAdminPanels } from '../features/parking/useParkingAdminPanels'
@@ -28,6 +30,7 @@ import { useSystemLocale } from '../hooks/useSystemLocale'
 import { cn } from '../lib/cn'
 import {
   createParking,
+  deleteParking,
   getParkingForEdit,
   updateParking,
   updateParkingStatus,
@@ -47,6 +50,60 @@ type SuccessDialogContent = {
 type RejectionReasonOption = {
   label: string
   value: ParkingRejectionReasonCode
+}
+
+function ParkingDeleteDialog({
+  isDeleting,
+  locale,
+  onCancel,
+  onConfirm,
+}: {
+  isDeleting: boolean
+  locale: SupportedLocale
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  const messages = getParkingMessages(locale)
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/20 p-6 backdrop-blur-[3px]">
+      <section
+        aria-modal="true"
+        className="w-full max-w-80 overflow-hidden rounded-xl bg-white px-4 py-10 shadow-[0_16px_48px_rgb(0_0_0_/_0.18)]"
+        role="dialog"
+      >
+        <div className="flex flex-col items-center gap-6">
+          <img alt="" aria-hidden="true" className="size-20" src={trashBigIcon} />
+          <div className="flex w-full flex-col items-center gap-2">
+            <h2 className="text-center font-heading text-xl leading-7 font-medium text-black">
+              {messages.deleteParkingDialogTitle}
+            </h2>
+            <p className="text-center font-heading text-base leading-5 font-normal text-zinc-600">
+              {messages.deleteParkingDialogSubtitle}
+            </p>
+          </div>
+          <div className="flex w-full gap-2">
+            <button
+              className="flex h-14 flex-1 items-center justify-center rounded-xl bg-[#E5E7EB] px-6 font-heading text-base leading-6 font-medium tracking-tight text-primary transition hover:bg-[#DDE3EA] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isDeleting}
+              onClick={onCancel}
+              type="button"
+            >
+              {messages.deleteParkingDialogCancel}
+            </button>
+            <button
+              className="flex h-14 flex-1 items-center justify-center rounded-xl bg-[#FF5F57] px-6 font-heading text-base leading-6 font-medium tracking-tight text-white transition hover:bg-[#f4534b] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isDeleting}
+              onClick={onConfirm}
+              type="button"
+            >
+              {messages.deleteParkingDialogConfirm}
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
 }
 
 function ParkingSuccessDialog({
@@ -272,6 +329,7 @@ export function ParkingAdminPage() {
     showParkingDetails,
     showParkingList,
     showRequests,
+    showReviews,
   } = useParkingAdminPanels()
   const [selectedParking, setSelectedParking] = useState<ParkingDetailItem | null>(
     null,
@@ -296,9 +354,14 @@ export function ParkingAdminPage() {
   const [detailsMode, setDetailsMode] = useState<'default' | 'request'>('default')
   const [requestsDefaultTab, setRequestsDefaultTab] = useState<'pending' | 'approved' | 'rejected'>('pending')
   const [selectedAuthor, setSelectedAuthor] = useState<ParkingAuthor | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDeletingParking, setIsDeletingParking] = useState(false)
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
   const [rejectionReason, setRejectionReason] =
     useState<ParkingRejectionReasonCode | null>(null)
+  const parkingDetailsReturnPanelRef = useRef<ReturnType<
+    typeof useParkingAdminPanels
+  >['activePanel']>(null)
   const authorProfileReturnPanelRef = useRef<ReturnType<typeof useParkingAdminPanels>['activePanel']>(null)
   const previousPanelRef = useRef(activePanel)
   const isParkingFormOpen =
@@ -329,6 +392,8 @@ export function ParkingAdminPage() {
 
   useEffect(() => {
     setSelectedAuthor(null)
+    setIsDeleteDialogOpen(false)
+    setIsDeletingParking(false)
     setIsRejectDialogOpen(false)
     setRejectionReason(null)
     setApprovalDialogContent(null)
@@ -343,6 +408,7 @@ export function ParkingAdminPage() {
     setSelectedAuthor(null)
     setDetailsMode(fromRequests ? 'request' : 'default')
     setSelectedParking(parking)
+    parkingDetailsReturnPanelRef.current = activePanel
     setFocusedParking({
       latitude: 'latitude' in parking ? parking.latitude : null,
       longitude: 'longitude' in parking ? parking.longitude : null,
@@ -379,11 +445,24 @@ export function ParkingAdminPage() {
     setIsRejectDialogOpen(true)
   }
 
+  function handleOpenDeleteDialog() {
+    if (!selectedParking || isUpdatingStatus || isDeletingParking) return
+
+    setStatusError(null)
+    setIsDeleteDialogOpen(true)
+  }
+
   function handleCloseRejectDialog() {
     if (isUpdatingStatus) return
 
     setIsRejectDialogOpen(false)
     setRejectionReason(null)
+  }
+
+  function handleCloseDeleteDialog() {
+    if (isDeletingParking) return
+
+    setIsDeleteDialogOpen(false)
   }
 
   async function handleRejectParking() {
@@ -407,14 +486,69 @@ export function ParkingAdminPage() {
     }
   }
 
+  async function handleDeleteParking() {
+    if (!selectedParking || isDeletingParking) return
+
+    setIsDeletingParking(true)
+    setStatusError(null)
+
+    try {
+      await deleteParking(selectedParking.id)
+      setMapRefreshKey((currentKey) => currentKey + 1)
+      setSelectedParking(null)
+      setSelectedAuthor(null)
+      setFocusedParking(null)
+      setIsDeleteDialogOpen(false)
+      const returnPanel = parkingDetailsReturnPanelRef.current
+      parkingDetailsReturnPanelRef.current = null
+
+      if (returnPanel === 'requests') {
+        showRequests()
+        return
+      }
+
+      if (returnPanel === 'reviews') {
+        showReviews()
+        return
+      }
+
+      showParkingList()
+    } catch (error) {
+      const details = getErrorDetails(error)
+      setStatusError(
+        details
+          ? `${messages.unableToDeleteParking} ${details}`
+          : messages.unableToDeleteParking,
+      )
+      setIsDeleteDialogOpen(false)
+    } finally {
+      setIsDeletingParking(false)
+    }
+  }
+
   function handleCloseParkingDetails() {
     setSelectedParking(null)
     setEditingParkingId(null)
     setSelectedAuthor(null)
+    setIsDeleteDialogOpen(false)
+    setIsDeletingParking(false)
     setIsRejectDialogOpen(false)
     setRejectionReason(null)
     setApprovalDialogContent(null)
     authorProfileReturnPanelRef.current = null
+    const returnPanel = parkingDetailsReturnPanelRef.current
+    parkingDetailsReturnPanelRef.current = null
+
+    if (returnPanel === 'requests') {
+      showRequests()
+      return
+    }
+
+    if (returnPanel === 'reviews') {
+      showReviews()
+      return
+    }
+
     showParkingList()
   }
 
@@ -659,6 +793,13 @@ export function ParkingAdminPage() {
             />
           </div>
         ) : null}
+        {activePanel === 'reviews' ? (
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-full max-w-[24.5rem]">
+            <ParkingReviewsPanel
+              onClose={closePanel}
+            />
+          </div>
+        ) : null}
         {activePanel === 'requests' ? (
           <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-full max-w-[24.5rem]">
             <RequestsPanel
@@ -708,6 +849,7 @@ export function ParkingAdminPage() {
               onApprove={() => void handleApproveParking()}
               onClose={handleCloseParkingDetails}
               onEdit={(parking) => void handleOpenEditParking(parking)}
+              onDelete={handleOpenDeleteDialog}
               onReject={handleOpenRejectDialog}
               onOpenAuthorProfile={handleOpenAuthorProfile}
               parking={selectedParking}
@@ -746,6 +888,14 @@ export function ParkingAdminPage() {
             onConfirm={() => void handleRejectParking()}
             onSelectReason={setRejectionReason}
             reason={rejectionReason}
+          />
+        ) : null}
+        {isDeleteDialogOpen ? (
+          <ParkingDeleteDialog
+            isDeleting={isDeletingParking}
+            locale={locale}
+            onCancel={handleCloseDeleteDialog}
+            onConfirm={() => void handleDeleteParking()}
           />
         ) : null}
       </div>

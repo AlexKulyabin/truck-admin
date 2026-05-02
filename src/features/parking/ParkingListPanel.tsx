@@ -1,4 +1,4 @@
-import { Plus, Search, X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { getParkingMessages } from '../../constants/parkingI18n'
 import { useParkingList } from '../../hooks/useParkingList'
@@ -6,6 +6,7 @@ import { useSystemLocale } from '../../hooks/useSystemLocale'
 import type { ParkingListItem } from '../../types/parking'
 import { useParkingAdminPanels } from './useParkingAdminPanels'
 import { ParkingListRow } from './ParkingListRow'
+import { ParkingSearchField } from './ParkingSearchField'
 
 type ParkingListPanelProps = {
   onClose: () => void
@@ -48,17 +49,7 @@ export function ParkingListPanel({
       </div>
 
       <div className="flex flex-col gap-6 px-6 pb-6">
-        <label className="flex h-14 items-center gap-3 rounded-[10px] bg-surface px-5 shadow-card">
-          <input
-            aria-label={messages.search}
-            className="min-w-0 flex-1 bg-transparent font-heading text-base font-normal text-text-primary outline-none placeholder:text-text-secondary"
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder={messages.search}
-            type="search"
-            value={searchQuery}
-          />
-          <Search aria-hidden="true" className="size-6 shrink-0 text-text-secondary" />
-        </label>
+        <ParkingSearchField onChange={setSearchQuery} value={searchQuery} />
 
         <button
           className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 font-heading text-base leading-6 font-medium text-white transition hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
