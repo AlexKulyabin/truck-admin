@@ -826,6 +826,21 @@ export async function getParkingForEdit(parkingId: string): Promise<AddParkingDr
   }
 }
 
+export async function updateParkingStatus(
+  parkingId: string,
+  status: 'approved' | 'rejected',
+) {
+  const client = getSupabaseClient()
+  const { error } = await client
+    .from(SUPABASE_TABLES.PARKINGS)
+    .update({ status })
+    .eq('id', parkingId)
+
+  if (error) {
+    throw new Error(`Update parking status failed: ${getSupabaseErrorMessage(error)}`)
+  }
+}
+
 export async function updateParking(parkingId: string, parking: CreateParkingInput) {
   const client = getSupabaseClient()
   const {

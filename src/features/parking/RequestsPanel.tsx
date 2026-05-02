@@ -14,6 +14,7 @@ import { cn } from '../../lib/cn'
 type RequestTabId = 'pending' | 'approved' | 'rejected'
 
 type RequestsPanelProps = {
+  defaultTab?: RequestTabId
   onClose: () => void
   onSelectParking: (_parking: ParkingListItem) => void
 }
@@ -35,9 +36,9 @@ function getErrorMessage(error: unknown, fallbackMessage: string) {
   return error instanceof Error ? error.message : fallbackMessage
 }
 
-export function RequestsPanel({ onClose, onSelectParking }: RequestsPanelProps) {
+export function RequestsPanel({ defaultTab = 'pending', onClose, onSelectParking }: RequestsPanelProps) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeTab, setActiveTab] = useState<RequestTabId>('pending')
+  const [activeTab, setActiveTab] = useState<RequestTabId>(defaultTab)
   const locale = useSystemLocale()
   const messages = getParkingMessages(locale)
   const { error, isLoading, parkingRequests } = useParkingRequests(searchQuery)

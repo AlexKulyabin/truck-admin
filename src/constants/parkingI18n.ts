@@ -1,4 +1,4 @@
-﻿export type SupportedLocale = 'en' | 'ru'
+export type SupportedLocale = 'en' | 'ru'
 
 type Messages = {
   addParking: string
@@ -11,6 +11,7 @@ type Messages = {
   close: string
   clearSearch: string
   complaints: string
+  approve: string
   delete: string
   details: string
   edit: string
@@ -26,6 +27,9 @@ type Messages = {
   loadingReviews: string
   accepted: string
   new: string
+  rejectRequest: string
+  approveRequest: string
+  unableToUpdateStatus: string
   rejected: string
   requests: string
   noAddress: string
@@ -61,6 +65,7 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
   en: {
     addParking: 'Add parking',
     addingParking: 'Adding parking',
+    approve: 'Approve',
     additionalServices: 'Additional services',
     allComplaints: 'All complaints',
     allReviews: 'All reviews',
@@ -84,6 +89,9 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
   loadingReviews: 'Loading reviews...',
   accepted: 'Accepted',
   new: 'New',
+  rejectRequest: 'Reject',
+  approveRequest: 'Accept',
+  unableToUpdateStatus: 'Unable to update status. Please try again.',
   rejected: 'Rejected',
   requests: 'Requests',
   noAddress: 'No address',
@@ -117,6 +125,7 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
   ru: {
     addParking: '\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0443',
     addingParking: '\u0414\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u0438\u0435 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438',
+    approve: '\u041e\u0434\u043e\u0431\u0440\u0438\u0442\u044c',
     additionalServices: '\u0414\u043e\u043f\u043e\u043b\u043d\u0438\u0442\u0435\u043b\u044c\u043d\u044b\u0435 \u0443\u0441\u043b\u0443\u0433\u0438',
     allComplaints: '\u0412\u0441\u0435 \u0436\u0430\u043b\u043e\u0431\u044b',
     allReviews: '\u0412\u0441\u0435 \u043e\u0442\u0437\u044b\u0432\u044b',
@@ -141,6 +150,9 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
   accepted: '\u041f\u0440\u0438\u043d\u044f\u0442\u044b\u0435',
   new: '\u041d\u043e\u0432\u044b\u0435',
   rejected: '\u041e\u0442\u043a\u043b\u043e\u043d\u0435\u043d\u043d\u044b\u0435',
+  rejectRequest: '\u041e\u0442\u043a\u043b\u043e\u043d\u0438\u0442\u044c',
+  approveRequest: '\u041f\u0440\u0438\u043d\u044f\u0442\u044c',
+  unableToUpdateStatus: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0431\u043d\u043e\u0432\u0438\u0442\u044c \u0441\u0442\u0430\u0442\u0443\u0441. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437.',
   requests: '\u0417\u0430\u044f\u0432\u043a\u0438',
   noAddress: '\u041d\u0435\u0442 \u0430\u0434\u0440\u0435\u0441\u0430',
   noComplaints: '\u0414\u043b\u044f \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u0436\u0430\u043b\u043e\u0431.',

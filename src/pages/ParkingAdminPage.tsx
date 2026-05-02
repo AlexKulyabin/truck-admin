@@ -22,6 +22,7 @@ import {
   createParking,
   getParkingForEdit,
   updateParking,
+  updateParkingStatus,
 } from '../services/parkingService'
 import type {
   ParkingDetailItem,
@@ -108,6 +109,7 @@ export function ParkingAdminPage() {
     showEditParking,
     showParkingDetails,
     showParkingList,
+    showRequests,
   } = useParkingAdminPanels()
   const [selectedParking, setSelectedParking] = useState<ParkingDetailItem | null>(
     null,
@@ -125,6 +127,10 @@ export function ParkingAdminPage() {
   const [mapRefreshKey, setMapRefreshKey] = useState(0)
   const [isSavingParking, setIsSavingParking] = useState(false)
   const [saveParkingError, setSaveParkingError] = useState<string | null>(null)
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+  const [statusError, setStatusError] = useState<string | null>(null)
+  const [detailsMode, setDetailsMode] = useState<'default' | 'request'>('default')
+  const [requestsDefaultTab, setRequestsDefaultTab] = useState<'pending' | 'approved' | 'rejected'>('pending')
   const previousPanelRef = useRef(activePanel)
   const isParkingFormOpen =
     activePanel === 'add-parking' || activePanel === 'edit-parking'
@@ -152,15 +158,53 @@ export function ParkingAdminPage() {
     )
   }, [activePanel, addParkingDraft])
 
-  function handleSelectParking(parking: ParkingMapItem | ParkingListItem) {
+  function handleSelectParking(parking: ParkingMapItem | ParkingListItem, fromRequests = false) {
     setEditingParkingId(null)
     setSaveParkingError(null)
+    setStatusError(null)
+    setDetailsMode(fromRequests ? 'request' : 'default')
     setSelectedParking(parking)
     setFocusedParking({
       latitude: 'latitude' in parking ? parking.latitude : null,
       longitude: 'longitude' in parking ? parking.longitude : null,
     })
     showParkingDetails()
+  }
+
+  async function handleApproveParking() {
+    if (!selectedParking || isUpdatingStatus) return
+    setIsUpdatingStatus(true)
+    setStatusError(null)
+    try {
+      await updateParkingStatus(selectedParking.id, 'approved')
+      setMapRefreshKey((k) => k + 1)
+      setSelectedParking(null)
+      setRequestsDefaultTab('approved')
+      showRequests()
+    } catch (error) {
+      const details = getErrorDetails(error)
+      setStatusError(details ? `${messages.unableToUpdateStatus} ${details}` : messages.unableToUpdateStatus)
+    } finally {
+      setIsUpdatingStatus(false)
+    }
+  }
+
+  async function handleRejectParking() {
+    if (!selectedParking || isUpdatingStatus) return
+    setIsUpdatingStatus(true)
+    setStatusError(null)
+    try {
+      await updateParkingStatus(selectedParking.id, 'rejected')
+      setMapRefreshKey((k) => k + 1)
+      setSelectedParking(null)
+      setRequestsDefaultTab('rejected')
+      showRequests()
+    } catch (error) {
+      const details = getErrorDetails(error)
+      setStatusError(details ? `${messages.unableToUpdateStatus} ${details}` : messages.unableToUpdateStatus)
+    } finally {
+      setIsUpdatingStatus(false)
+    }
   }
 
   function handleCloseParkingDetails() {
@@ -390,8 +434,10 @@ export function ParkingAdminPage() {
         {activePanel === 'requests' ? (
           <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-full max-w-[24.5rem]">
             <RequestsPanel
+              key={requestsDefaultTab}
+              defaultTab={requestsDefaultTab}
               onClose={closePanel}
-              onSelectParking={handleSelectParking}
+              onSelectParking={(parking) => handleSelectParking(parking, true)}
             />
           </div>
         ) : null}
@@ -429,9 +475,14 @@ export function ParkingAdminPage() {
           <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-full max-w-[28rem]">
             <ParkingDetailsPanel
               key={selectedParking.id}
+              isUpdatingStatus={isUpdatingStatus}
+              mode={detailsMode}
+              onApprove={() => void handleApproveParking()}
               onClose={handleCloseParkingDetails}
               onEdit={(parking) => void handleOpenEditParking(parking)}
+              onReject={() => void handleRejectParking()}
               parking={selectedParking}
+              statusError={statusError}
             />
           </div>
         ) : null}

@@ -42,9 +42,14 @@ import type {
 } from '../../types/parking'
 
 type ParkingDetailsPanelProps = {
+  isUpdatingStatus?: boolean
+  mode?: 'default' | 'request'
+  onApprove?: () => void
   onClose: () => void
   onEdit: (_parking: ParkingDetailItem) => void
+  onReject?: () => void
   parking: ParkingDetailItem
+  statusError?: string | null
 }
 
 type DetailTabId = 'complaints' | 'info' | 'photo' | 'reviews'
@@ -463,9 +468,14 @@ function ComplaintsContent({
 }
 
 export function ParkingDetailsPanel({
+  isUpdatingStatus = false,
+  mode = 'default',
+  onApprove,
   onClose,
   onEdit,
+  onReject,
   parking,
+  statusError = null,
 }: ParkingDetailsPanelProps) {
   const locale = useSystemLocale()
   const messages = getParkingMessages(locale)
@@ -818,22 +828,48 @@ export function ParkingDetailsPanel({
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <button
-            className="flex h-12 items-center justify-center gap-2 rounded-xl bg-surface text-sm font-medium text-text-primary shadow-card transition hover:bg-[#FFF4F4]"
-            type="button"
-          >
-            <img alt="" aria-hidden="true" className="size-5" src={trashIcon} />
-            <span>{messages.delete}</span>
-          </button>
-          <button
-            className="flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-medium text-white shadow-card transition hover:bg-primary-dark"
-            onClick={() => onEdit(parking)}
-            type="button"
-          >
-            <img alt="" aria-hidden="true" className="size-5" src={editIcon} />
-            <span>{messages.edit}</span>
-          </button>
+          {mode === 'request' ? (
+            <>
+              <button
+                className="flex h-12 items-center justify-center gap-2 rounded-xl bg-surface text-sm font-medium text-text-primary shadow-card transition hover:bg-[#FFF4F4] disabled:opacity-50"
+                disabled={isUpdatingStatus}
+                onClick={onReject}
+                type="button"
+              >
+                <span>{messages.rejectRequest}</span>
+              </button>
+              <button
+                className="flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-medium text-white shadow-card transition hover:bg-primary-dark disabled:opacity-50"
+                disabled={isUpdatingStatus}
+                onClick={onApprove}
+                type="button"
+              >
+                <span>{messages.approveRequest}</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                className="flex h-12 items-center justify-center gap-2 rounded-xl bg-surface text-sm font-medium text-text-primary shadow-card transition hover:bg-[#FFF4F4]"
+                type="button"
+              >
+                <img alt="" aria-hidden="true" className="size-5" src={trashIcon} />
+                <span>{messages.delete}</span>
+              </button>
+              <button
+                className="flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-medium text-white shadow-card transition hover:bg-primary-dark"
+                onClick={() => onEdit(parking)}
+                type="button"
+              >
+                <img alt="" aria-hidden="true" className="size-5" src={editIcon} />
+                <span>{messages.edit}</span>
+              </button>
+            </>
+          )}
         </div>
+        {statusError ? (
+          <p className="pt-2 font-heading text-sm leading-5 text-danger">{statusError}</p>
+        ) : null}
 
         <div
           className={cn(
