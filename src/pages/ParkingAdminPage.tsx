@@ -22,6 +22,8 @@ import {
 } from '../features/parking/addParkingDraft'
 import { ParkingDetailsPanel } from '../features/parking/ParkingDetailsPanel'
 import { ParkingListPanel } from '../features/parking/ParkingListPanel'
+import { ParkingComplaintDetailsPanel } from '../features/parking/ParkingComplaintDetailsPanel'
+import { ParkingReviewDetailsPanel } from '../features/parking/ParkingReviewDetailsPanel'
 import { ParkingReviewsPanel } from '../features/parking/ParkingReviewsPanel'
 import { ParkingUserProfilePanel } from '../features/parking/ParkingUserProfilePanel'
 import { RequestsPanel } from '../features/parking/RequestsPanel'
@@ -40,6 +42,8 @@ import type {
   ParkingListItem,
   ParkingMapItem,
   ParkingAuthor,
+  ParkingComplaint,
+  ParkingReview,
 } from '../types/parking'
 
 type SuccessDialogContent = {
@@ -354,6 +358,8 @@ export function ParkingAdminPage() {
   const [detailsMode, setDetailsMode] = useState<'default' | 'request'>('default')
   const [requestsDefaultTab, setRequestsDefaultTab] = useState<'pending' | 'approved' | 'rejected'>('pending')
   const [selectedAuthor, setSelectedAuthor] = useState<ParkingAuthor | null>(null)
+  const [selectedComplaint, setSelectedComplaint] = useState<ParkingComplaint | null>(null)
+  const [selectedReview, setSelectedReview] = useState<ParkingReview | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeletingParking, setIsDeletingParking] = useState(false)
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false)
@@ -363,9 +369,14 @@ export function ParkingAdminPage() {
     typeof useParkingAdminPanels
   >['activePanel']>(null)
   const authorProfileReturnPanelRef = useRef<ReturnType<typeof useParkingAdminPanels>['activePanel']>(null)
+  const complaintDetailsReturnPanelRef = useRef<ReturnType<typeof useParkingAdminPanels>['activePanel']>(null)
+  const reviewDetailsReturnPanelRef = useRef<ReturnType<typeof useParkingAdminPanels>['activePanel']>(null)
   const previousPanelRef = useRef(activePanel)
   const isParkingFormOpen =
     activePanel === 'add-parking' || activePanel === 'edit-parking'
+  const isFloatingPanelOpen = Boolean(
+    selectedAuthor?.id || selectedReview || selectedComplaint,
+  )
 
   useEffect(() => {
     const previousPanel = previousPanelRef.current
@@ -392,6 +403,8 @@ export function ParkingAdminPage() {
 
   useEffect(() => {
     setSelectedAuthor(null)
+    setSelectedComplaint(null)
+    setSelectedReview(null)
     setIsDeleteDialogOpen(false)
     setIsDeletingParking(false)
     setIsRejectDialogOpen(false)
@@ -406,6 +419,8 @@ export function ParkingAdminPage() {
     setSaveParkingError(null)
     setStatusError(null)
     setSelectedAuthor(null)
+    setSelectedComplaint(null)
+    setSelectedReview(null)
     setDetailsMode(fromRequests ? 'request' : 'default')
     setSelectedParking(parking)
     parkingDetailsReturnPanelRef.current = activePanel
@@ -425,6 +440,8 @@ export function ParkingAdminPage() {
       setMapRefreshKey((k) => k + 1)
       setSelectedParking(null)
       setSelectedAuthor(null)
+      setSelectedComplaint(null)
+      setSelectedReview(null)
       setRequestsDefaultTab('approved')
       setApprovalDialogContent({
         description: messages.approvalDialogSubtitle,
@@ -474,6 +491,8 @@ export function ParkingAdminPage() {
       setMapRefreshKey((k) => k + 1)
       setSelectedParking(null)
       setSelectedAuthor(null)
+      setSelectedComplaint(null)
+      setSelectedReview(null)
       setIsRejectDialogOpen(false)
       setRejectionReason(null)
       setRequestsDefaultTab('rejected')
@@ -497,6 +516,8 @@ export function ParkingAdminPage() {
       setMapRefreshKey((currentKey) => currentKey + 1)
       setSelectedParking(null)
       setSelectedAuthor(null)
+      setSelectedComplaint(null)
+      setSelectedReview(null)
       setFocusedParking(null)
       setIsDeleteDialogOpen(false)
       const returnPanel = parkingDetailsReturnPanelRef.current
@@ -530,6 +551,8 @@ export function ParkingAdminPage() {
     setSelectedParking(null)
     setEditingParkingId(null)
     setSelectedAuthor(null)
+    setSelectedComplaint(null)
+    setSelectedReview(null)
     setIsDeleteDialogOpen(false)
     setIsDeletingParking(false)
     setIsRejectDialogOpen(false)
@@ -569,6 +592,52 @@ export function ParkingAdminPage() {
 
     if (returnPanel === 'parking-details' && selectedParking) {
       showParkingDetails()
+      return
+    }
+
+    showParkingList()
+  }
+
+  function handleOpenReviewDetails(review: ParkingReview) {
+    setSelectedReview(review)
+    reviewDetailsReturnPanelRef.current = activePanel
+  }
+
+  function handleOpenComplaintDetails(complaint: ParkingComplaint) {
+    setSelectedComplaint(complaint)
+    complaintDetailsReturnPanelRef.current = activePanel
+  }
+
+  function handleCloseComplaintDetails() {
+    setSelectedComplaint(null)
+    const returnPanel = complaintDetailsReturnPanelRef.current
+    complaintDetailsReturnPanelRef.current = null
+
+    if (returnPanel === 'parking-details' && selectedParking) {
+      showParkingDetails()
+      return
+    }
+
+    if (returnPanel === 'reviews') {
+      showReviews()
+      return
+    }
+
+    showParkingList()
+  }
+
+  function handleCloseReviewDetails() {
+    setSelectedReview(null)
+    const returnPanel = reviewDetailsReturnPanelRef.current
+    reviewDetailsReturnPanelRef.current = null
+
+    if (returnPanel === 'parking-details' && selectedParking) {
+      showParkingDetails()
+      return
+    }
+
+    if (returnPanel === 'reviews') {
+      showReviews()
       return
     }
 
@@ -785,7 +854,7 @@ export function ParkingAdminPage() {
           onSelectParking={handleSelectParking}
           refreshKey={mapRefreshKey}
         />
-        {activePanel === 'parking-list' ? (
+        {activePanel === 'parking-list' && !isFloatingPanelOpen ? (
           <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-full max-w-[24.5rem]">
             <ParkingListPanel
               onClose={closePanel}
@@ -793,14 +862,16 @@ export function ParkingAdminPage() {
             />
           </div>
         ) : null}
-        {activePanel === 'reviews' ? (
+        {activePanel === 'reviews' && !isFloatingPanelOpen ? (
           <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-full max-w-[24.5rem]">
             <ParkingReviewsPanel
+              onOpenComplaintDetails={handleOpenComplaintDetails}
+              onOpenReviewDetails={handleOpenReviewDetails}
               onClose={closePanel}
             />
           </div>
         ) : null}
-        {activePanel === 'requests' ? (
+        {activePanel === 'requests' && !isFloatingPanelOpen ? (
           <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-full max-w-[24.5rem]">
             <RequestsPanel
               key={requestsDefaultTab}
@@ -810,7 +881,7 @@ export function ParkingAdminPage() {
             />
           </div>
         ) : null}
-        {isParkingFormOpen ? (
+        {isParkingFormOpen && !isFloatingPanelOpen ? (
           <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-full max-w-[24.5rem]">
             <AddParkingPanel
               draft={addParkingDraft}
@@ -840,7 +911,7 @@ export function ParkingAdminPage() {
             />
           </div>
         ) : null}
-        {activePanel === 'parking-details' && selectedParking ? (
+        {activePanel === 'parking-details' && selectedParking && !isFloatingPanelOpen ? (
           <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-full max-w-[28rem]">
             <ParkingDetailsPanel
               key={selectedParking.id}
@@ -851,7 +922,9 @@ export function ParkingAdminPage() {
               onEdit={(parking) => void handleOpenEditParking(parking)}
               onDelete={handleOpenDeleteDialog}
               onReject={handleOpenRejectDialog}
+              onOpenComplaintDetails={handleOpenComplaintDetails}
               onOpenAuthorProfile={handleOpenAuthorProfile}
+              onOpenReviewDetails={handleOpenReviewDetails}
               parking={selectedParking}
               statusError={statusError}
             />
@@ -862,6 +935,28 @@ export function ParkingAdminPage() {
             <ParkingUserProfilePanel
               author={selectedAuthor}
               onClose={handleCloseAuthorProfile}
+            />
+          </div>
+        ) : null}
+        {selectedReview ? (
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-30 w-full max-w-[24.5rem]">
+            <ParkingReviewDetailsPanel
+              key={selectedReview.id}
+              onBack={handleCloseReviewDetails}
+              onClose={handleCloseReviewDetails}
+              onDelete={handleCloseReviewDetails}
+              review={selectedReview}
+            />
+          </div>
+        ) : null}
+        {selectedComplaint ? (
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-30 w-full max-w-[24.5rem]">
+            <ParkingComplaintDetailsPanel
+              key={selectedComplaint.id}
+              complaint={selectedComplaint}
+              onBack={handleCloseComplaintDetails}
+              onClose={handleCloseComplaintDetails}
+              onDelete={() => undefined}
             />
           </div>
         ) : null}

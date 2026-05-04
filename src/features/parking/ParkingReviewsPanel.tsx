@@ -11,7 +11,7 @@ import { useParkingReviewParkings } from '../../hooks/useParkingReviewParkings'
 import { useParkingReviews } from '../../hooks/useParkingReviews'
 import { useSystemLocale } from '../../hooks/useSystemLocale'
 import { cn } from '../../lib/cn'
-import type { ParkingListItem } from '../../types/parking'
+import type { ParkingComplaint, ParkingListItem, ParkingReview } from '../../types/parking'
 import { ParkingAddressCard } from './ParkingAddressCard'
 import { ParkingComplaintCard } from './ParkingComplaintCard'
 import { ParkingListRow } from './ParkingListRow'
@@ -21,6 +21,8 @@ import { useParkingAdminPanels } from './useParkingAdminPanels'
 
 type ParkingReviewsPanelProps = {
   onClose: () => void
+  onOpenComplaintDetails?: (_complaint: ParkingComplaint) => void
+  onOpenReviewDetails?: (_review: ParkingReview) => void
 }
 
 type ParkingFeedTabId = 'complaints' | 'reviews'
@@ -43,28 +45,30 @@ function ParkingFeedHeader({
   onClose: () => void
 }) {
   return (
-    <div className="flex h-10 items-center justify-between py-2">
-      <div className="flex w-full max-w-64 items-center gap-3">
+    <div className="px-6 pt-6">
+      <div className="flex h-10 items-center justify-between py-2">
+        <div className="flex w-full max-w-64 items-center gap-3">
+          <button
+            aria-label={messages.close}
+            className="flex size-10 shrink-0 items-center justify-center rounded-full text-text-secondary transition hover:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+            onClick={onBack}
+            type="button"
+          >
+            <img alt="" aria-hidden="true" className="size-6" src={arrowIcon} />
+          </button>
+          <h2 className="truncate font-heading text-[20px] leading-7 font-normal text-text-primary">
+            {messages.reviews}
+          </h2>
+        </div>
         <button
           aria-label={messages.close}
-          className="flex size-10 shrink-0 items-center justify-center rounded-full text-text-secondary transition hover:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
-          onClick={onBack}
+          className="flex size-10 items-center justify-center rounded-full text-text-secondary transition hover:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+          onClick={onClose}
           type="button"
         >
-          <img alt="" aria-hidden="true" className="size-6" src={arrowIcon} />
+          <X aria-hidden="true" className="size-6" />
         </button>
-        <h2 className="truncate font-heading text-[20px] leading-7 font-normal text-text-primary">
-          {messages.reviews}
-        </h2>
       </div>
-      <button
-        aria-label={messages.close}
-        className="flex size-10 items-center justify-center rounded-full text-text-secondary transition hover:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
-        onClick={onClose}
-        type="button"
-      >
-        <X aria-hidden="true" className="size-6" />
-      </button>
     </div>
   )
 }
@@ -129,19 +133,75 @@ function ParkingFeedDetailView({
   messages,
   onBackToList,
   onClose,
+  onOpenComplaintDetails,
+  onOpenReviewDetails,
   parking,
 }: {
   locale: SupportedLocale
   messages: ReturnType<typeof getParkingMessages>
   onBackToList: () => void
   onClose: () => void
+  onOpenComplaintDetails?: (_complaint: ParkingComplaint) => void
+  onOpenReviewDetails?: (_review: ParkingReview) => void
   parking: ParkingListItem
+}) {
+  const parkingId = parking.id?.trim()
+
+  if (!parkingId) {
+    return (
+      <>
+        <ParkingFeedHeader
+          messages={messages}
+          onBack={onBackToList}
+          onClose={onClose}
+        />
+        <div className="flex-1 px-6 pb-6">
+          <div className="rounded-[10px] bg-surface px-4 py-5 font-heading text-sm font-normal text-danger shadow-card">
+            {messages.parkingDoesNotExist}
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <ParkingFeedDetailContent
+      locale={locale}
+      messages={messages}
+      onBackToList={onBackToList}
+      onClose={onClose}
+      onOpenComplaintDetails={onOpenComplaintDetails}
+      onOpenReviewDetails={onOpenReviewDetails}
+      parking={parking}
+      parkingId={parkingId}
+    />
+  )
+}
+
+function ParkingFeedDetailContent({
+  locale,
+  messages,
+  onBackToList,
+  onClose,
+  onOpenComplaintDetails,
+  onOpenReviewDetails,
+  parking,
+  parkingId,
+}: {
+  locale: SupportedLocale
+  messages: ReturnType<typeof getParkingMessages>
+  onBackToList: () => void
+  onClose: () => void
+  onOpenComplaintDetails?: (_complaint: ParkingComplaint) => void
+  onOpenReviewDetails?: (_review: ParkingReview) => void
+  parking: ParkingListItem
+  parkingId: string
 }) {
   const [activeTab, setActiveTab] = useState<ParkingFeedTabId>('reviews')
   const { complaints, error: complaintsError, isLoading: isComplaintsLoading } =
-    useParkingComplaints(parking.id)
+    useParkingComplaints(parkingId)
   const { error: reviewsError, isLoading: isReviewsLoading, reviews, summary } =
-    useParkingReviews(parking.id)
+    useParkingReviews(parkingId)
 
   const isShowingReviews = activeTab === 'reviews'
   const sectionTitle = isShowingReviews ? messages.allReviews : messages.allComplaints
@@ -194,7 +254,9 @@ function ParkingFeedDetailView({
                     actionDetailsLabel={messages.details}
                     key={review.id}
                     onDelete={() => undefined}
-                    onDetails={() => undefined}
+                    onDetails={
+                      onOpenReviewDetails ? () => onOpenReviewDetails(review) : undefined
+                    }
                     review={review}
                     showActions
                     showAuthorName
@@ -223,7 +285,11 @@ function ParkingFeedDetailView({
                   complaint={complaint}
                   key={complaint.id}
                   onDelete={() => undefined}
-                  onDetails={() => undefined}
+                  onDetails={
+                    onOpenComplaintDetails
+                      ? () => onOpenComplaintDetails(complaint)
+                      : undefined
+                  }
                   showActions
                 />
               ))}
@@ -237,6 +303,8 @@ function ParkingFeedDetailView({
 
 export function ParkingReviewsPanel({
   onClose,
+  onOpenComplaintDetails,
+  onOpenReviewDetails,
 }: ParkingReviewsPanelProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedParking, setSelectedParking] = useState<ParkingListItem | null>(null)
@@ -266,6 +334,8 @@ export function ParkingReviewsPanel({
           messages={messages}
           onBackToList={() => setSelectedParking(null)}
           onClose={onClose}
+          onOpenComplaintDetails={onOpenComplaintDetails}
+          onOpenReviewDetails={onOpenReviewDetails}
           parking={selectedParking}
         />
       ) : (

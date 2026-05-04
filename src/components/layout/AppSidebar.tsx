@@ -52,7 +52,7 @@ function SidebarButton({
       aria-label={label}
       className={cn(
         'relative flex h-12 items-center rounded-[10px] transition',
-        'focus:outline-none focus:ring-2 focus:ring-primary/30',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
         isActive ? 'bg-surface' : 'hover:bg-surface',
         isExpanded ? 'w-full gap-2 pr-2' : 'w-12 justify-center',
       )}
@@ -212,7 +212,7 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
         ))}
         <button
           aria-label="Log out"
-          className="flex size-12 items-center justify-center rounded-[10px] transition hover:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="flex size-12 items-center justify-center rounded-[10px] transition hover:bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
           onClick={(event) => {
             stopSidebarToggle(event)
             onLogout()
@@ -228,7 +228,7 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
         <button
           aria-label="Log out"
           className={cn(
-            'flex h-12 w-full items-center rounded-[10px] bg-surface transition hover:bg-map-marker-muted focus:outline-none focus:ring-2 focus:ring-primary/30',
+            'flex h-12 w-full items-center rounded-[10px] bg-surface transition hover:bg-map-marker-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
             isExpanded ? 'gap-4' : 'justify-center',
           )}
           onClick={(event) => {

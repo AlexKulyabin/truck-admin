@@ -26,9 +26,7 @@ export function ParkingAddressCard({ parking }: ParkingAddressCardProps) {
   return (
     <div className="rounded-[10px] bg-surface px-4 py-4 shadow-card">
       <div className="flex items-center gap-3">
-        <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary">
-          <img alt="" aria-hidden="true" className="size-6 brightness-0 invert" src={locationIcon} />
-        </span>
+        <img alt="" aria-hidden="true" className="size-[1.875rem] shrink-0" src={locationIcon} />
         <div className="min-w-0 flex-1 font-heading text-base leading-6 font-medium">
           <span className="text-text-primary">{primary}</span>
           {secondary ? <span className="text-text-secondary">, {secondary}</span> : null}

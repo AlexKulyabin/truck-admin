@@ -50,7 +50,9 @@ type ParkingDetailsPanelProps = {
   onEdit: (_parking: ParkingDetailItem) => void
   onDelete?: () => void
   onReject?: () => void
+  onOpenComplaintDetails?: (_complaint: ParkingComplaint) => void
   onOpenAuthorProfile?: (_author: ParkingAuthor) => void
+  onOpenReviewDetails?: (_review: ParkingReview) => void
   parking: ParkingDetailItem
   statusError?: string | null
 }
@@ -340,10 +342,12 @@ function ReviewSummary({
 function ReviewsContent({
   isLoading,
   locale,
+  onOpenReviewDetails,
   reviews,
   summary,
 }: {
   isLoading: boolean
+  onOpenReviewDetails?: (_review: ParkingReview) => void
   locale: SupportedLocale
   reviews: ParkingReview[]
   summary: ParkingRatingSummary
@@ -374,7 +378,15 @@ function ReviewsContent({
         ) : (
           <div className="space-y-4">
             {reviews.map((review) => (
-              <ParkingReviewCard key={review.id} review={review} />
+              <ParkingReviewCard
+                actionDetailsLabel={messages.details}
+                key={review.id}
+                onDetails={
+                  onOpenReviewDetails ? () => onOpenReviewDetails(review) : undefined
+                }
+                review={review}
+                showActions
+              />
             ))}
           </div>
         )}
@@ -432,10 +444,12 @@ function ComplaintsContent({
   complaints,
   isLoading,
   locale,
+  onOpenComplaintDetails,
 }: {
   complaints: ParkingComplaint[]
   isLoading: boolean
   locale: SupportedLocale
+  onOpenComplaintDetails?: (_complaint: ParkingComplaint) => void
 }) {
   const messages = getParkingMessages(locale)
 
@@ -461,7 +475,16 @@ function ComplaintsContent({
         ) : (
           <div className="space-y-4">
             {complaints.map((complaint) => (
-              <ParkingComplaintCard complaint={complaint} key={complaint.id} />
+              <ParkingComplaintCard
+                actionDetailsLabel={messages.details}
+                complaint={complaint}
+                key={complaint.id}
+                onDetails={
+                  onOpenComplaintDetails
+                    ? () => onOpenComplaintDetails(complaint)
+                    : undefined
+                }
+              />
             ))}
           </div>
         )}
@@ -477,6 +500,7 @@ export function ParkingDetailsPanel({
   onClose,
   onEdit,
   onDelete,
+  onOpenComplaintDetails,
   onReject,
   onOpenAuthorProfile,
   parking,
@@ -968,6 +992,7 @@ export function ParkingDetailsPanel({
           <ReviewsContent
             isLoading={isReviewsLoading}
             locale={locale}
+            onOpenReviewDetails={onOpenReviewDetails}
             reviews={reviews}
             summary={reviewSummary}
           />
@@ -984,6 +1009,7 @@ export function ParkingDetailsPanel({
             complaints={complaints}
             isLoading={isComplaintsLoading}
             locale={locale}
+            onOpenComplaintDetails={onOpenComplaintDetails}
           />
         ) : null}
       </div>

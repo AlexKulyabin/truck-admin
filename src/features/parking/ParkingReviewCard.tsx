@@ -132,7 +132,12 @@ export function ParkingReviewCard({
 
         <div className="min-w-0 flex-1 space-y-1.5">
           {displayTitle ? (
-            <div className="font-heading text-base leading-6 font-medium text-text-primary">
+            <div
+              className={cn(
+                'font-heading text-base leading-6 text-text-primary',
+                showAuthorName ? 'font-normal' : 'font-medium',
+              )}
+            >
               {displayTitle}
             </div>
           ) : null}
