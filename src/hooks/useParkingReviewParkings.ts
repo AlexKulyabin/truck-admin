@@ -6,7 +6,7 @@ function isAbortError(error: unknown) {
   return error instanceof DOMException && error.name === 'AbortError'
 }
 
-export function useParkingReviewParkings(searchQuery: string) {
+export function useParkingReviewParkings(searchQuery: string, refreshKey = 0) {
   const abortControllerRef = useRef<AbortController | null>(null)
   const [error, setError] = useState<unknown>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -47,7 +47,7 @@ export function useParkingReviewParkings(searchQuery: string) {
       window.clearTimeout(timeoutId)
       abortControllerRef.current?.abort()
     }
-  }, [loadParkingItems, searchQuery])
+  }, [loadParkingItems, refreshKey, searchQuery])
 
   return { error, isLoading, parkingItems }
 }

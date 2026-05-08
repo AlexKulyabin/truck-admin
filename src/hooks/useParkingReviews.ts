@@ -18,7 +18,7 @@ const EMPTY_SUMMARY: ParkingRatingSummary = {
   },
 }
 
-export function useParkingReviews(parkingId: string) {
+export function useParkingReviews(parkingId: string, refreshKey = 0) {
   const abortControllerRef = useRef<AbortController | null>(null)
   const [error, setError] = useState<unknown>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -54,7 +54,7 @@ export function useParkingReviews(parkingId: string) {
     return () => {
       abortController.abort()
     }
-  }, [parkingId])
+  }, [parkingId, refreshKey])
 
   return { error, isLoading, reviews, summary }
 }

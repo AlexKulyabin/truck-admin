@@ -25,6 +25,7 @@ type Messages = {
   deleteReviewDialogConfirm: string
   deleteReviewDialogSubtitle: string
   deleteReviewDialogTitle: string
+  unableToDeleteReview: string
   details: string
   edit: string
   editingParking: string
@@ -52,6 +53,20 @@ type Messages = {
   everythingThatWasStatedInTheDescription: string
   comfortForRelaxation: string
   quietAndComfortable: string
+  terribly: string
+  badly: string
+  medium: string
+  normally: string
+  difficult: string
+  dangerous: string
+  good: string
+  quietly: string
+  almostNothingIsAvailable: string
+  onlyHalfOfTheServicesAreAvailable: string
+  almostEverythingThatWasStated: string
+  nothingButParking: string
+  veryInconvenient: string
+  inconvenient: string
   rejectRequest: string
   approveRequest: string
   unableToUpdateStatus: string
@@ -126,6 +141,7 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     deleteReviewDialogConfirm: 'Delete',
     deleteReviewDialogSubtitle: 'The review will be deleted and will not be displayed in the feed',
     deleteReviewDialogTitle: 'Delete review?',
+    unableToDeleteReview: 'Unable to delete review. Please try again.',
     details: 'More details',
     edit: 'Edit',
     editingParking: 'Editing parking',
@@ -149,11 +165,25 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
   veryConvenient: 'Very convenient',
   securityLevel: 'Security level',
   absolutelySafe: 'Absolutely safe',
-  infrastructure: 'Infrastructure',
-  everythingThatWasStatedInTheDescription: 'Everything that was stated in the description',
-  comfortForRelaxation: 'Comfort for relaxation',
-  quietAndComfortable: 'Quiet and comfortable',
-  rejectRequest: 'Reject',
+    infrastructure: 'Infrastructure',
+    everythingThatWasStatedInTheDescription: 'Everything that was stated in the description',
+    comfortForRelaxation: 'Comfort for relaxation',
+    quietAndComfortable: 'Quiet and comfortable',
+    terribly: 'Terribly',
+    badly: 'Badly',
+    medium: 'Medium',
+    normally: 'Normally',
+    difficult: 'Difficult',
+    dangerous: 'Dangerous',
+    good: 'Good',
+    quietly: 'Quietly',
+    almostNothingIsAvailable: 'Almost nothing is available',
+    onlyHalfOfTheServicesAreAvailable: 'Only half of the services are available',
+    almostEverythingThatWasStated: 'Almost everything that was stated',
+    nothingButParking: 'Nothing but parking',
+    veryInconvenient: 'Very inconvenient',
+    inconvenient: 'Inconvenient',
+    rejectRequest: 'Reject',
     approveRequest: 'Accept',
     unableToUpdateStatus: 'Unable to update status. Please try again.',
     rejected: 'Rejected',
@@ -221,10 +251,11 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     deleteComplaintDialogConfirm: '\u0423\u0434\u0430\u043b\u0438\u0442\u044c',
     deleteComplaintDialogSubtitle: '\u0416\u0430\u043b\u043e\u0431\u0430 \u0431\u0443\u0434\u0435\u0442 \u0443\u0434\u0430\u043b\u0435\u043d\u0430 \u0438 \u043d\u0435 \u0431\u0443\u0434\u0435\u0442 \u043e\u0442\u043e\u0431\u0440\u0430\u0436\u0430\u0442\u044c\u0441\u044f \u0432 \u043b\u0435\u043d\u0442\u0435',
     deleteComplaintDialogTitle: '\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0436\u0430\u043b\u043e\u0431\u0443?',
-    deleteReviewDialogCancel: '\u041e\u0442\u043c\u0435\u043d\u0430',
-    deleteReviewDialogConfirm: '\u0423\u0434\u0430\u043b\u0438\u0442\u044c',
-    deleteReviewDialogSubtitle: '\u041e\u0442\u0437\u044b\u0432 \u0431\u0443\u0434\u0435\u0442 \u0443\u0434\u0430\u043b\u0435\u043d \u0438 \u043d\u0435 \u0431\u0443\u0434\u0435\u0442 \u043e\u0442\u043e\u0431\u0440\u0430\u0436\u0430\u0442\u044c\u0441\u044f \u0432 \u043b\u0435\u043d\u0442\u0435',
-    deleteReviewDialogTitle: '\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u043e\u0442\u0437\u044b\u0432?',
+  deleteReviewDialogCancel: '\u041e\u0442\u043c\u0435\u043d\u0430',
+  deleteReviewDialogConfirm: '\u0423\u0434\u0430\u043b\u0438\u0442\u044c',
+  deleteReviewDialogSubtitle: '\u041e\u0442\u0437\u044b\u0432 \u0431\u0443\u0434\u0435\u0442 \u0443\u0434\u0430\u043b\u0435\u043d \u0438 \u043d\u0435 \u0431\u0443\u0434\u0435\u0442 \u043e\u0442\u043e\u0431\u0440\u0430\u0436\u0430\u0442\u044c\u0441\u044f \u0432 \u043b\u0435\u043d\u0442\u0435',
+  deleteReviewDialogTitle: '\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u043e\u0442\u0437\u044b\u0432?',
+  unableToDeleteReview: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0443\u0434\u0430\u043b\u0438\u0442\u044c \u043e\u0442\u0437\u044b\u0432. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0435 \u0440\u0430\u0437.',
     details: '\u041f\u043e\u0434\u0440\u043e\u0431\u043d\u0435\u0435',
     edit: '\u0420\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u0442\u044c',
     editingParking: '\u0420\u0435\u0434\u0430\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438',
@@ -252,6 +283,20 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
   everythingThatWasStatedInTheDescription: '\u0412\u0441\u0435, \u0447\u0442\u043e \u0431\u044b\u043b\u043e \u0443\u043a\u0430\u0437\u0430\u043d\u043e \u0432 \u043e\u043f\u0438\u0441\u0430\u043d\u0438\u0438',
   comfortForRelaxation: '\u041a\u043e\u043c\u0444\u043e\u0440\u0442 \u0434\u043b\u044f \u043e\u0442\u0434\u044b\u0445\u0430',
   quietAndComfortable: '\u0422\u0438\u0445\u043e \u0438 \u0443\u044e\u0442\u043d\u043e',
+  terribly: '\u041e\u0447\u0435\u043d\u044c \u043f\u043b\u043e\u0445\u043e',
+  badly: '\u041f\u043b\u043e\u0445\u043e',
+  medium: '\u0421\u0440\u0435\u0434\u043d\u0435',
+  normally: '\u041d\u043e\u0440\u043c\u0430\u043b\u044c\u043d\u043e',
+  difficult: '\u0421\u043b\u043e\u0436\u043d\u043e',
+  dangerous: '\u041e\u043f\u0430\u0441\u043d\u043e',
+  good: '\u0425\u043e\u0440\u043e\u0448\u043e',
+  quietly: '\u0421\u043f\u043e\u043a\u043e\u0439\u043d\u043e',
+  almostNothingIsAvailable: '\u041f\u043e\u0447\u0442\u0438 \u043d\u0438\u0447\u0435\u0433\u043e \u043d\u0435\u0442',
+  onlyHalfOfTheServicesAreAvailable: '\u0414\u043e\u0441\u0442\u0443\u043f\u043d\u0430 \u0442\u043e\u043b\u044c\u043a\u043e \u043f\u043e\u043b\u043e\u0432\u0438\u043d\u0430 \u0443\u0441\u043b\u0443\u0433',
+  almostEverythingThatWasStated: '\u041f\u043e\u0447\u0442\u0438 \u0432\u0441\u0435, \u0447\u0442\u043e \u0431\u044b\u043b\u043e \u0437\u0430\u044f\u0432\u043b\u0435\u043d\u043e',
+  nothingButParking: '\u041d\u0438\u0447\u0435\u0433\u043e, \u043a\u0440\u043e\u043c\u0435 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438',
+  veryInconvenient: '\u041e\u0447\u0435\u043d\u044c \u043d\u0435\u0443\u0434\u043e\u0431\u043d\u043e',
+  inconvenient: '\u041d\u0435\u0443\u0434\u043e\u0431\u043d\u043e',
   rejected: '\u041e\u0442\u043a\u043b\u043e\u043d\u0435\u043d\u043d\u044b\u0435',
   rejectRequest: '\u041e\u0442\u043a\u043b\u043e\u043d\u0438\u0442\u044c',
   approveRequest: '\u041f\u0440\u0438\u043d\u044f\u0442\u044c',
@@ -409,5 +454,100 @@ export function formatSpotsCount(count: number, locale: SupportedLocale) {
   }
 
   return `${count} spot${count === 1 ? '' : 's'}`
+}
+
+type ReviewDetailRatingKind =
+  | 'arrival'
+  | 'comfort'
+  | 'impression'
+  | 'infrastructure'
+  | 'security'
+
+export function formatReviewDetailRating(
+  kind: ReviewDetailRatingKind,
+  value: number | null,
+  locale: SupportedLocale,
+) {
+  const messages = getParkingMessages(locale)
+
+  switch (kind) {
+    case 'impression':
+      switch (value) {
+        case 1:
+          return messages.terribly
+        case 2:
+          return messages.badly
+        case 3:
+          return messages.medium
+        case 4:
+          return messages.normally
+        case 5:
+          return messages.great
+        default:
+          return null
+      }
+    case 'arrival':
+      switch (value) {
+        case 1:
+          return messages.veryInconvenient
+        case 2:
+          return messages.difficult
+        case 3:
+          return messages.normally
+        case 4:
+          return messages.good
+        case 5:
+          return messages.veryConvenient
+        default:
+          return null
+      }
+    case 'security':
+      switch (value) {
+        case 1:
+          return messages.dangerous
+        case 2:
+          return messages.badly
+        case 3:
+          return messages.normally
+        case 4:
+          return messages.quietly
+        case 5:
+          return messages.absolutelySafe
+        default:
+          return null
+      }
+    case 'infrastructure':
+      switch (value) {
+        case 1:
+          return messages.nothingButParking
+        case 2:
+          return messages.almostNothingIsAvailable
+        case 3:
+          return messages.onlyHalfOfTheServicesAreAvailable
+        case 4:
+          return messages.almostEverythingThatWasStated
+        case 5:
+          return messages.everythingThatWasStatedInTheDescription
+        default:
+          return null
+      }
+    case 'comfort':
+      switch (value) {
+        case 1:
+          return messages.veryInconvenient
+        case 2:
+          return messages.inconvenient
+        case 3:
+          return messages.medium
+        case 4:
+          return messages.normally
+        case 5:
+          return messages.quietAndComfortable
+        default:
+          return null
+      }
+    default:
+      return null
+  }
 }
 

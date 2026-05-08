@@ -54,6 +54,7 @@ type ParkingDetailsPanelProps = {
   onOpenAuthorProfile?: (_author: ParkingAuthor) => void
   onOpenReviewDetails?: (_review: ParkingReview) => void
   parking: ParkingDetailItem
+  refreshKey?: number
   statusError?: string | null
 }
 
@@ -504,6 +505,7 @@ export function ParkingDetailsPanel({
   onReject,
   onOpenAuthorProfile,
   parking,
+  refreshKey = 0,
   statusError = null,
 }: ParkingDetailsPanelProps) {
   const locale = useSystemLocale()
@@ -533,7 +535,7 @@ export function ParkingDetailsPanel({
     useParkingComplaints(parking.id)
   const { isLoading: isPhotosLoading, photos } = useParkingPhotos(parking.id)
   const { isLoading: isReviewsLoading, reviews, summary: reviewSummary } =
-    useParkingReviews(parking.id)
+    useParkingReviews(parking.id, refreshKey)
   const detail = buildParkingDetailModelFromRecord(parking, parkingDetails)
   const tabs = buildLocalizedTabs(
     reviewSummary.reviewsCount,

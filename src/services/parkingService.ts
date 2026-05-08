@@ -103,7 +103,17 @@ type ParkingReviewSummaryRow = Pick<
 
 type ParkingReviewItem = Pick<
   ParkingReviewRow,
-  'average_score' | 'comment' | 'created_at' | 'id' | 'parking_id' | 'user_id'
+  | 'average_score'
+  | 'comment'
+  | 'created_at'
+  | 'id'
+  | 'parking_id'
+  | 'rating_arrival'
+  | 'rating_comfort'
+  | 'rating_impression'
+  | 'rating_infrastructure'
+  | 'rating_security'
+  | 'user_id'
 >
 
 type ParkingReviewPhotoItem = Pick<ParkingPhotoRow, 'id' | 'review_id' | 'url'>
@@ -113,7 +123,16 @@ type ParkingComplaintItem = Pick<
 >
 type ParkingReviewContentItem = Pick<
   ParkingReviewRow,
-  'average_score' | 'comment' | 'created_at' | 'id' | 'parking_id'
+  | 'average_score'
+  | 'comment'
+  | 'created_at'
+  | 'id'
+  | 'parking_id'
+  | 'rating_arrival'
+  | 'rating_comfort'
+  | 'rating_impression'
+  | 'rating_infrastructure'
+  | 'rating_security'
 >
 type ParkingAddressRow = Pick<ParkingRow, 'address' | 'id'>
 
@@ -239,6 +258,10 @@ function getStoragePathFromPublicUrl(url: string) {
   } catch {
     return null
   }
+}
+
+function getParkingContentStoragePath(url: string) {
+  return getStoragePathFromPublicUrl(url)
 }
 
 function normalizeParkingPoint(point: ParkingPointRow): ParkingPoint {
@@ -649,7 +672,9 @@ export async function listParkingReviews(
   const client = getSupabaseClient()
   const reviewsQuery = client
     .from(SUPABASE_TABLES.REVIEWS)
-    .select('id, created_at, average_score, comment, parking_id, user_id')
+    .select(
+      'id, created_at, average_score, comment, parking_id, rating_arrival, rating_comfort, rating_impression, rating_infrastructure, rating_security, user_id',
+    )
     .eq('parking_id', parkingId)
     .order('created_at', { ascending: false })
 
@@ -734,6 +759,11 @@ export async function listParkingReviews(
       parkingAddress: null,
       parkingId: review.parking_id ?? null,
       photos: photosByReviewId.get(review.id) ?? [],
+      ratingArrival: review.rating_arrival ?? null,
+      ratingComfort: review.rating_comfort ?? null,
+      ratingImpression: review.rating_impression ?? null,
+      ratingInfrastructure: review.rating_infrastructure ?? null,
+      ratingSecurity: review.rating_security ?? null,
       score: review.average_score,
       thumbnailUrl: photosByReviewId.get(review.id)?.[0]?.url ?? null,
     }
@@ -746,7 +776,9 @@ export async function listUserReviews(userId: string, signal?: AbortSignal) {
 
   const reviewsQuery = client
     .from(SUPABASE_TABLES.REVIEWS)
-    .select('id, created_at, average_score, comment, parking_id')
+    .select(
+      'id, created_at, average_score, comment, parking_id, rating_arrival, rating_comfort, rating_impression, rating_infrastructure, rating_security',
+    )
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
 
@@ -829,6 +861,11 @@ export async function listUserReviews(userId: string, signal?: AbortSignal) {
       : null,
     parkingId: review.parking_id ?? null,
     photos: photosByReviewId.get(review.id) ?? [],
+    ratingArrival: review.rating_arrival ?? null,
+    ratingComfort: review.rating_comfort ?? null,
+    ratingImpression: review.rating_impression ?? null,
+    ratingInfrastructure: review.rating_infrastructure ?? null,
+    ratingSecurity: review.rating_security ?? null,
     score: review.average_score,
     thumbnailUrl: photosByReviewId.get(review.id)?.[0]?.url ?? null,
   }))
@@ -1110,7 +1147,7 @@ export async function deleteParking(parkingId: string) {
   }
 
   const storagePaths = photoUrls
-    .map((url) => getStoragePathFromPublicUrl(url))
+    .map((url) => getParkingContentStoragePath(url))
     .filter((path): path is string => Boolean(path))
 
   if (storagePaths.length > 0) {
@@ -1120,6 +1157,48 @@ export async function deleteParking(parkingId: string) {
 
     if (storageError) {
       console.warn('Delete parking storage cleanup failed:', getSupabaseErrorMessage(storageError))
+    }
+  }
+}
+
+export async function deleteParkingReview(reviewId: number) {
+  const client = getSupabaseClient()
+
+  const { data: reviewPhotos, error: photosError } = await client
+    .from(SUPABASE_TABLES.PARKING_PHOTOS)
+    .select('url')
+    .eq('review_id', reviewId)
+
+  if (photosError) {
+    throw new Error(`Load review photos for delete failed: ${getSupabaseErrorMessage(photosError)}`)
+  }
+
+  const photoUrls = ((reviewPhotos ?? []) as Array<{ url: string }>).map((photo) => photo.url)
+
+  const deletionSteps = [
+    client.from(SUPABASE_TABLES.PARKING_PHOTOS).delete().eq('review_id', reviewId),
+    client.from(SUPABASE_TABLES.REVIEWS).delete().eq('id', reviewId),
+  ] as const
+
+  for (const step of deletionSteps) {
+    const { error } = await step
+
+    if (error) {
+      throw new Error(`Delete review failed: ${getSupabaseErrorMessage(error)}`)
+    }
+  }
+
+  const storagePaths = photoUrls
+    .map((url) => getParkingContentStoragePath(url))
+    .filter((path): path is string => Boolean(path))
+
+  if (storagePaths.length > 0) {
+    const { error: storageError } = await client.storage
+      .from(PARKING_CONTENT_BUCKET)
+      .remove(storagePaths)
+
+    if (storageError) {
+      console.warn('Delete review storage cleanup failed:', getSupabaseErrorMessage(storageError))
     }
   }
 }

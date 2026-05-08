@@ -14,15 +14,18 @@ import { cn } from '../../lib/cn'
 import type { ParkingComplaint, ParkingListItem, ParkingReview } from '../../types/parking'
 import { ParkingAddressCard } from './ParkingAddressCard'
 import { ParkingComplaintCard } from './ParkingComplaintCard'
+import { ParkingReviewDeleteDialog } from './ParkingReviewDeleteDialog'
 import { ParkingListRow } from './ParkingListRow'
 import { ParkingReviewCard } from './ParkingReviewCard'
 import { ParkingSearchField } from './ParkingSearchField'
 import { useParkingAdminPanels } from './useParkingAdminPanels'
+import { deleteParkingReview } from '../../services/parkingService'
 
 type ParkingReviewsPanelProps = {
   onClose: () => void
   onOpenComplaintDetails?: (_complaint: ParkingComplaint) => void
   onOpenReviewDetails?: (_review: ParkingReview) => void
+  refreshKey?: number
 }
 
 type ParkingFeedTabId = 'complaints' | 'reviews'
@@ -136,6 +139,7 @@ function ParkingFeedDetailView({
   onOpenComplaintDetails,
   onOpenReviewDetails,
   parking,
+  refreshKey,
 }: {
   locale: SupportedLocale
   messages: ReturnType<typeof getParkingMessages>
@@ -144,6 +148,7 @@ function ParkingFeedDetailView({
   onOpenComplaintDetails?: (_complaint: ParkingComplaint) => void
   onOpenReviewDetails?: (_review: ParkingReview) => void
   parking: ParkingListItem
+  refreshKey: number
 }) {
   const parkingId = parking.id?.trim()
 
@@ -174,6 +179,7 @@ function ParkingFeedDetailView({
       onOpenReviewDetails={onOpenReviewDetails}
       parking={parking}
       parkingId={parkingId}
+      refreshKey={refreshKey}
     />
   )
 }
@@ -187,6 +193,7 @@ function ParkingFeedDetailContent({
   onOpenReviewDetails,
   parking,
   parkingId,
+  refreshKey,
 }: {
   locale: SupportedLocale
   messages: ReturnType<typeof getParkingMessages>
@@ -196,15 +203,43 @@ function ParkingFeedDetailContent({
   onOpenReviewDetails?: (_review: ParkingReview) => void
   parking: ParkingListItem
   parkingId: string
+  refreshKey: number
 }) {
   const [activeTab, setActiveTab] = useState<ParkingFeedTabId>('reviews')
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDeletingReview, setIsDeletingReview] = useState(false)
+  const [reviewToDelete, setReviewToDelete] = useState<ParkingReview | null>(null)
+  const [reviewRefreshKey, setReviewRefreshKey] = useState(0)
   const { complaints, error: complaintsError, isLoading: isComplaintsLoading } =
     useParkingComplaints(parkingId)
   const { error: reviewsError, isLoading: isReviewsLoading, reviews, summary } =
-    useParkingReviews(parkingId)
+    useParkingReviews(parkingId, refreshKey + reviewRefreshKey)
 
   const isShowingReviews = activeTab === 'reviews'
   const sectionTitle = isShowingReviews ? messages.allReviews : messages.allComplaints
+
+  async function handleDeleteSelectedReview() {
+    if (!reviewToDelete || isDeletingReview) {
+      return
+    }
+
+    setIsDeletingReview(true)
+    setDeleteError(null)
+
+    try {
+      await deleteParkingReview(reviewToDelete.id)
+      setReviewRefreshKey((currentValue) => currentValue + 1)
+      setIsDeleteDialogOpen(false)
+      setReviewToDelete(null)
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error ? error.message : messages.unableToDeleteReview,
+      )
+    } finally {
+      setIsDeletingReview(false)
+    }
+  }
 
   return (
     <>
@@ -253,7 +288,11 @@ function ParkingFeedDetailContent({
                     actionDeleteLabel={messages.delete}
                     actionDetailsLabel={messages.details}
                     key={review.id}
-                    onDelete={() => undefined}
+                    onDelete={() => {
+                      setDeleteError(null)
+                      setReviewToDelete(review)
+                      setIsDeleteDialogOpen(true)
+                    }}
                     onDetails={
                       onOpenReviewDetails ? () => onOpenReviewDetails(review) : undefined
                     }
@@ -297,6 +336,24 @@ function ParkingFeedDetailContent({
           )}
         </div>
       </div>
+
+      {isDeleteDialogOpen ? (
+        <ParkingReviewDeleteDialog
+          error={deleteError}
+          isDeleting={isDeletingReview}
+          locale={locale}
+          onCancel={() => {
+            if (isDeletingReview) {
+              return
+            }
+
+            setDeleteError(null)
+            setIsDeleteDialogOpen(false)
+            setReviewToDelete(null)
+          }}
+          onConfirm={handleDeleteSelectedReview}
+        />
+      ) : null}
     </>
   )
 }
@@ -305,13 +362,17 @@ export function ParkingReviewsPanel({
   onClose,
   onOpenComplaintDetails,
   onOpenReviewDetails,
+  refreshKey = 0,
 }: ParkingReviewsPanelProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedParking, setSelectedParking] = useState<ParkingListItem | null>(null)
   const locale = useSystemLocale()
   const messages = getParkingMessages(locale)
   const { activePanel, navigationKey } = useParkingAdminPanels()
-  const { error, isLoading, parkingItems } = useParkingReviewParkings(searchQuery)
+  const { error, isLoading, parkingItems } = useParkingReviewParkings(
+    searchQuery,
+    refreshKey,
+  )
   const heading = useMemo(() => messages.reviews, [messages.reviews])
 
   useEffect(() => {
@@ -337,6 +398,7 @@ export function ParkingReviewsPanel({
           onOpenComplaintDetails={onOpenComplaintDetails}
           onOpenReviewDetails={onOpenReviewDetails}
           parking={selectedParking}
+          refreshKey={refreshKey}
         />
       ) : (
         <>

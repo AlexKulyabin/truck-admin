@@ -8,24 +8,22 @@ import mainImpressionIcon from '../../assets/icons/main-impression.svg'
 import photoIcon from '../../assets/icons/photo2.svg'
 import securityLevelIcon from '../../assets/icons/security-level.svg'
 import trackIcon from '../../assets/icons/track.svg'
-import trashBigIcon from '../../assets/icons/trash-big.svg'
 import trashIcon from '../../assets/icons/trash.svg'
-import { getParkingMessages, type SupportedLocale } from '../../constants/parkingI18n'
+import {
+  formatReviewDetailRating,
+  getParkingMessages,
+  type SupportedLocale,
+} from '../../constants/parkingI18n'
 import { useSystemLocale } from '../../hooks/useSystemLocale'
 import { cn } from '../../lib/cn'
 import type { ParkingReview } from '../../types/parking'
+import { ParkingReviewDeleteDialog } from './ParkingReviewDeleteDialog'
 
 type ParkingReviewDetailsPanelProps = {
   onBack: () => void
   onClose: () => void
-  onDelete?: () => void
+  onDelete?: () => Promise<void> | void
   review: ParkingReview
-}
-
-type ReviewDeleteDialogProps = {
-  locale: SupportedLocale
-  onCancel: () => void
-  onConfirm: () => void
 }
 
 type ReviewBadgeCardProps = {
@@ -183,46 +181,6 @@ function ReviewPhotosCard({ photos, title }: ReviewPhotosCardProps) {
   )
 }
 
-function ReviewDeleteDialog({ locale, onCancel, onConfirm }: ReviewDeleteDialogProps) {
-  const messages = getParkingMessages(locale)
-
-  return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/20 p-6 backdrop-blur-[3px]">
-      <section
-        aria-modal="true"
-        className="flex w-full max-w-[21.5rem] flex-col items-center gap-6 rounded-xl bg-surface px-4 py-10 shadow-[0_16px_48px_rgb(0_0_0_/_0.18)] sm:px-5"
-        role="dialog"
-      >
-        <img alt="" aria-hidden="true" className="size-20" src={trashBigIcon} />
-        <div className="flex w-full max-w-[18.5rem] flex-col items-center gap-2">
-          <h2 className="text-center font-heading text-xl leading-7 font-medium text-text-primary">
-            {messages.deleteReviewDialogTitle}
-          </h2>
-          <p className="text-center font-heading text-base leading-5 font-normal text-text-secondary">
-            {messages.deleteReviewDialogSubtitle}
-          </p>
-        </div>
-        <div className="flex w-full gap-2">
-          <button
-            className="flex h-14 flex-1 items-center justify-center rounded-xl bg-[#E5E7EB] px-6 font-heading text-base leading-6 font-medium tracking-tight text-primary transition hover:bg-[#DDE3EA]"
-            onClick={onCancel}
-            type="button"
-          >
-            {messages.deleteReviewDialogCancel}
-          </button>
-          <button
-            className="flex h-14 flex-1 items-center justify-center rounded-xl bg-[#FF5F57] px-6 font-heading text-base leading-6 font-medium tracking-tight text-white transition hover:bg-[#f4534b]"
-            onClick={onConfirm}
-            type="button"
-          >
-            {messages.deleteReviewDialogConfirm}
-          </button>
-        </div>
-      </section>
-    </div>
-  )
-}
-
 function getReviewDetailSections(locale: SupportedLocale) {
   const messages = getParkingMessages(locale)
 
@@ -255,6 +213,43 @@ function getReviewDetailSections(locale: SupportedLocale) {
   ] as const
 }
 
+function getReviewSections(review: ParkingReview, locale: SupportedLocale) {
+  const fallbackSections = getReviewDetailSections(locale)
+
+  return [
+    {
+      ...fallbackSections[0],
+      subtitle:
+        formatReviewDetailRating('impression', review.ratingImpression, locale) ??
+        fallbackSections[0].subtitle,
+    },
+    {
+      ...fallbackSections[1],
+      subtitle:
+        formatReviewDetailRating('arrival', review.ratingArrival, locale) ??
+        fallbackSections[1].subtitle,
+    },
+    {
+      ...fallbackSections[2],
+      subtitle:
+        formatReviewDetailRating('security', review.ratingSecurity, locale) ??
+        fallbackSections[2].subtitle,
+    },
+    {
+      ...fallbackSections[3],
+      subtitle:
+        formatReviewDetailRating('infrastructure', review.ratingInfrastructure, locale) ??
+        fallbackSections[3].subtitle,
+    },
+    {
+      ...fallbackSections[4],
+      subtitle:
+        formatReviewDetailRating('comfort', review.ratingComfort, locale) ??
+        fallbackSections[4].subtitle,
+    },
+  ] as const
+}
+
 export function ParkingReviewDetailsPanel({
   onBack,
   onClose,
@@ -264,9 +259,11 @@ export function ParkingReviewDetailsPanel({
   const locale = useSystemLocale()
   const messages = getParkingMessages(locale)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [isDeletingReview, setIsDeletingReview] = useState(false)
   const authorName = review.authorName?.trim() || messages.anonymousUser
   const comment = review.comment?.trim() || messages.noComment
-  const sections = getReviewDetailSections(locale)
+  const sections = getReviewSections(review, locale)
 
   return (
     <aside className="pointer-events-auto flex h-full w-full max-w-[24.5rem] flex-col overflow-hidden rounded-none border-r border-border bg-surface-muted shadow-[0_16px_40px_rgb(0_0_0_/_0.08)] md:max-w-[24.5rem]">
@@ -320,7 +317,9 @@ export function ParkingReviewDetailsPanel({
             title={messages.comment}
           />
 
-          <ReviewPhotosCard photos={review.photos} title={messages.photo} />
+          {review.photos.length > 0 ? (
+            <ReviewPhotosCard photos={review.photos} title={messages.photo} />
+          ) : null}
         </div>
       </div>
 
@@ -329,7 +328,10 @@ export function ParkingReviewDetailsPanel({
           className={cn(
             'flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-surface px-6 font-heading text-base leading-6 font-medium text-text-primary shadow-card transition hover:bg-surface-muted',
           )}
-          onClick={() => setIsDeleteDialogOpen(true)}
+          onClick={() => {
+            setDeleteError(null)
+            setIsDeleteDialogOpen(true)
+          }}
           type="button"
         >
           <img alt="" aria-hidden="true" className="size-6 shrink-0" src={trashIcon} />
@@ -338,12 +340,32 @@ export function ParkingReviewDetailsPanel({
       </div>
 
       {isDeleteDialogOpen ? (
-        <ReviewDeleteDialog
+        <ParkingReviewDeleteDialog
+          error={deleteError}
+          isDeleting={isDeletingReview}
           locale={locale}
-          onCancel={() => setIsDeleteDialogOpen(false)}
-          onConfirm={() => {
+          onCancel={() => {
+            setDeleteError(null)
             setIsDeleteDialogOpen(false)
-            onDelete?.()
+          }}
+          onConfirm={async () => {
+            if (isDeletingReview) {
+              return
+            }
+
+            setIsDeletingReview(true)
+            setDeleteError(null)
+
+            try {
+              await onDelete?.()
+              setIsDeleteDialogOpen(false)
+            } catch (error) {
+              setDeleteError(
+                error instanceof Error ? error.message : messages.unableToDeleteReview,
+              )
+            } finally {
+              setIsDeletingReview(false)
+            }
           }}
         />
       ) : null}

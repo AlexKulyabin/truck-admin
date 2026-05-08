@@ -33,6 +33,7 @@ import { cn } from '../lib/cn'
 import {
   createParking,
   deleteParking,
+  deleteParkingReview,
   getParkingForEdit,
   updateParking,
   updateParkingStatus,
@@ -351,6 +352,7 @@ export function ParkingAdminPage() {
   const [approvalDialogContent, setApprovalDialogContent] =
     useState<SuccessDialogContent | null>(null)
   const [mapRefreshKey, setMapRefreshKey] = useState(0)
+  const [reviewRefreshKey, setReviewRefreshKey] = useState(0)
   const [isSavingParking, setIsSavingParking] = useState(false)
   const [saveParkingError, setSaveParkingError] = useState<string | null>(null)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
@@ -514,6 +516,7 @@ export function ParkingAdminPage() {
     try {
       await deleteParking(selectedParking.id)
       setMapRefreshKey((currentKey) => currentKey + 1)
+      setReviewRefreshKey((currentKey) => currentKey + 1)
       setSelectedParking(null)
       setSelectedAuthor(null)
       setSelectedComplaint(null)
@@ -545,6 +548,12 @@ export function ParkingAdminPage() {
     } finally {
       setIsDeletingParking(false)
     }
+  }
+
+  async function handleDeleteReview(review: ParkingReview) {
+    await deleteParkingReview(review.id)
+    setReviewRefreshKey((currentKey) => currentKey + 1)
+    setSelectedReview(null)
   }
 
   function handleCloseParkingDetails() {
@@ -862,9 +871,10 @@ export function ParkingAdminPage() {
             />
           </div>
         ) : null}
-        {activePanel === 'reviews' && !isFloatingPanelOpen ? (
+        {activePanel === 'reviews' ? (
           <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-full max-w-[24.5rem]">
             <ParkingReviewsPanel
+              refreshKey={reviewRefreshKey}
               onOpenComplaintDetails={handleOpenComplaintDetails}
               onOpenReviewDetails={handleOpenReviewDetails}
               onClose={closePanel}
@@ -926,6 +936,7 @@ export function ParkingAdminPage() {
               onOpenAuthorProfile={handleOpenAuthorProfile}
               onOpenReviewDetails={handleOpenReviewDetails}
               parking={selectedParking}
+              refreshKey={reviewRefreshKey}
               statusError={statusError}
             />
           </div>
@@ -944,7 +955,7 @@ export function ParkingAdminPage() {
               key={selectedReview.id}
               onBack={handleCloseReviewDetails}
               onClose={handleCloseReviewDetails}
-              onDelete={handleCloseReviewDetails}
+              onDelete={() => handleDeleteReview(selectedReview)}
               review={selectedReview}
             />
           </div>

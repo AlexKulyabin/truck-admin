@@ -65,6 +65,10 @@ export type ParkingPhoto = {
   url: string
 }
 
+export type ParkingReviewPhoto = ParkingPhoto & {
+  parkingId: string | null
+}
+
 export type ParkingAuthor = {
   avatarUrl: string | null
   fullName: string | null
@@ -86,6 +90,11 @@ export type ParkingReview = {
   parkingAddress: string | null
   parkingId: string | null
   photos: ParkingPhoto[]
+  ratingArrival: number | null
+  ratingComfort: number | null
+  ratingImpression: number | null
+  ratingInfrastructure: number | null
+  ratingSecurity: number | null
   score: number | null
   thumbnailUrl: string | null
 }
