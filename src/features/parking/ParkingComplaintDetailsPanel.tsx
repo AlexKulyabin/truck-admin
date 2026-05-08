@@ -58,9 +58,11 @@ function ComplaintCommentCard({
         </div>
       </div>
       <div className="px-4 pb-4">
-        <p className="m-0 font-heading text-base leading-6 font-normal tracking-wide text-text-primary">
-          {comment}
-        </p>
+        <div className="px-2 py-1">
+          <p className="m-0 font-heading text-base leading-6 font-normal tracking-wide text-text-primary">
+            {comment}
+          </p>
+        </div>
       </div>
     </div>
   )
@@ -109,34 +111,36 @@ export function ParkingComplaintDetailsPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 pb-6">
-        <div className="px-4 py-4">
-          <h3 className="font-heading text-base leading-5 font-medium text-text-primary">
-            {authorName}
-          </h3>
+        <div className="space-y-6">
+          <div className="p-4">
+            <div className="flex h-10 items-center gap-2">
+              <h3 className="font-heading text-base leading-5 font-medium text-text-primary">
+                {authorName}
+              </h3>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <ComplaintBadgeCard
+              icon={complaintReasonIcon}
+              subtitle={reportLabel}
+              title={messages.specifyReasonForComplaint}
+            />
+
+            <ComplaintCommentCard comment={comment} title={messages.comment} />
+          </div>
+
+          <button
+            className={cn(
+              'flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-surface px-6 font-heading text-base leading-6 font-medium text-text-primary shadow-card transition hover:bg-surface-muted',
+            )}
+            onClick={onDelete}
+            type="button"
+          >
+            <img alt="" aria-hidden="true" className="size-6 shrink-0" src={trashIcon} />
+            <span>{messages.delete}</span>
+          </button>
         </div>
-
-        <div className="space-y-2">
-          <ComplaintBadgeCard
-            icon={complaintReasonIcon}
-            subtitle={reportLabel}
-            title={messages.specifyReasonForComplaint}
-          />
-
-          <ComplaintCommentCard comment={comment} title={messages.comment} />
-        </div>
-      </div>
-
-      <div className="px-6 pb-4">
-        <button
-          className={cn(
-            'flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-surface px-6 font-heading text-base leading-6 font-medium text-text-primary shadow-card transition hover:bg-surface-muted',
-          )}
-          onClick={onDelete}
-          type="button"
-        >
-          <img alt="" aria-hidden="true" className="size-6 shrink-0" src={trashIcon} />
-          <span>{messages.delete}</span>
-        </button>
       </div>
     </aside>
   )

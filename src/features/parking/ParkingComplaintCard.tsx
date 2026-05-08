@@ -46,7 +46,7 @@ export function ParkingComplaintCard({
   const reportLabel = formatComplaintReportLabel(complaint.reportLabel, locale)
 
   return (
-    <article className="space-y-3 py-1">
+    <article className="py-1">
       <div className="flex items-start gap-4 px-4 py-1">
         {complaint.authorAvatarUrl ? (
           <img

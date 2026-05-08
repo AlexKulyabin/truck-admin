@@ -116,7 +116,7 @@ export function ParkingReviewCard({
   }
 
   return (
-    <article className="space-y-3 py-1">
+    <article className="py-1">
       <div className="flex items-start gap-4">
         {(thumbnailUrl ?? review.authorAvatarUrl) ? (
           <img
