@@ -39,6 +39,7 @@ type Messages = {
   loadingComplaints: string
   loadingPhotos: string
   loadingReviews: string
+  loggingOut: string
   mainImpression: string
   accepted: string
   new: string
@@ -97,6 +98,10 @@ type Messages = {
   parkingUpdatedDescription: string
   parkingUpdatedTitle: string
   photo: string
+  logout: string
+  logoutDialogCancel: string
+  logoutDialogConfirm: string
+  logoutDialogTitle: string
   readLess: string
   readMore: string
   recreationArea: string
@@ -109,10 +114,12 @@ type Messages = {
   spots: string
   upTo: string
   unableToDeleteParking: string
+  unableToDeleteComplaint: string
   unableToLoadReviewParkings: string
   unableToLoadParkingList: string
   unableToSaveParking: string
   unableToUpdateParking: string
+  unableToLogout: string
 }
 
 const messagesByLocale: Record<SupportedLocale, Messages> = {
@@ -155,6 +162,7 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
   loadingComplaints: 'Loading complaints...',
   loadingPhotos: 'Loading photos...',
   loadingReviews: 'Loading reviews...',
+  loggingOut: 'Logging out...',
   mainImpression: 'The main impression',
   accepted: 'Accepted',
   new: 'New',
@@ -213,6 +221,10 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     parkingUpdatedDescription: 'Parking changes have been saved and will be displayed on the map',
     parkingUpdatedTitle: 'Parking updated',
     photo: 'Photo',
+    logout: 'Log out',
+    logoutDialogCancel: 'Cancel',
+    logoutDialogConfirm: 'Log out',
+    logoutDialogTitle: 'Are you sure you want to log out of your account?',
     readLess: 'Read less',
     readMore: 'Read more',
     recreationArea: 'Recreation area',
@@ -225,10 +237,12 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     spots: 'spots',
     upTo: 'Up to',
     unableToDeleteParking: 'Unable to delete parking. Please try again.',
+    unableToDeleteComplaint: 'Unable to delete complaint. Please try again.',
     unableToLoadReviewParkings: 'Unable to load review parkings.',
     unableToLoadParkingList: 'Unable to load parking list.',
     unableToSaveParking: 'Unable to save parking. Please try again.',
     unableToUpdateParking: 'Unable to update parking. Please try again.',
+    unableToLogout: 'Unable to log out. Please try again.',
   },
   ru: {
     addParking: '\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0443',
@@ -269,6 +283,7 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
   loadingComplaints: '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u0436\u0430\u043b\u043e\u0431\u044b...',
   loadingPhotos: '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u0444\u043e\u0442\u043e\u0433\u0440\u0430\u0444\u0438\u0438...',
   loadingReviews: '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u043e\u0442\u0437\u044b\u0432\u044b...',
+  loggingOut: '\u0412\u044b\u0445\u043e\u0434...',
   mainImpression: '\u041e\u0441\u043d\u043e\u0432\u043d\u043e\u0435 \u0432\u043f\u0435\u0447\u0430\u0442\u043b\u0435\u043d\u0438\u0435',
   accepted: '\u041f\u0440\u0438\u043d\u044f\u0442\u044b\u0435',
   new: '\u041d\u043e\u0432\u044b\u0435',
@@ -327,6 +342,10 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     parkingUpdatedDescription: '\u0418\u0437\u043c\u0435\u043d\u0435\u043d\u0438\u044f \u0441\u043e\u0445\u0440\u0430\u043d\u0435\u043d\u044b \u0438 \u0431\u0443\u0434\u0443\u0442 \u043e\u0442\u043e\u0431\u0440\u0430\u0436\u0430\u0442\u044c\u0441\u044f \u043d\u0430 \u043a\u0430\u0440\u0442\u0435',
     parkingUpdatedTitle: '\u041f\u0430\u0440\u043a\u043e\u0432\u043a\u0430 \u0431\u044b\u043b\u0430 \u0438\u0437\u043c\u0435\u043d\u0435\u043d\u0430',
     photo: '\u0424\u043e\u0442\u043e',
+    logout: '\u0412\u044b\u0439\u0442\u0438',
+    logoutDialogCancel: '\u041e\u0442\u043c\u0435\u043d\u0430',
+    logoutDialogConfirm: '\u0412\u044b\u0439\u0442\u0438',
+    logoutDialogTitle: '\u0422\u044b \u0443\u0432\u0435\u0440\u0435\u043d, \u0447\u0442\u043e \u0445\u043e\u0447\u0435\u0448\u044c \u0432\u044b\u0439\u0442\u0438 \u0438\u0437 \u0430\u043a\u043a\u0430\u0443\u043d\u0442\u0430?',
     readLess: '\u0421\u0432\u0435\u0440\u043d\u0443\u0442\u044c',
     readMore: '\u0427\u0438\u0442\u0430\u0442\u044c \u0434\u0430\u043b\u044c\u0448\u0435',
     recreationArea: '\u0417\u043e\u043d\u0430 \u043e\u0442\u0434\u044b\u0445\u0430',
@@ -339,10 +358,12 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     spots: '\u043c\u0435\u0441\u0442',
     upTo: '\u0414\u043e',
     unableToDeleteParking: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0443\u0434\u0430\u043b\u0438\u0442\u044c \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0443. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0435 \u0440\u0430\u0437.',
+    unableToDeleteComplaint: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0443\u0434\u0430\u043b\u0438\u0442\u044c \u0436\u0430\u043b\u043e\u0431\u0443. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0451 \u0440\u0430\u0437.',
     unableToLoadReviewParkings: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u0441 \u043e\u0442\u0437\u044b\u0432\u0430\u043c\u0438.',
     unableToLoadParkingList: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c \u0441\u043f\u0438\u0441\u043e\u043a \u043f\u0430\u0440\u043a\u043e\u0432\u043e\u043a.',
     unableToSaveParking: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0441\u043e\u0445\u0440\u0430\u043d\u0438\u0442\u044c \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0443. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0435 \u0440\u0430\u0437.',
     unableToUpdateParking: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043e\u0431\u043d\u043e\u0432\u0438\u0442\u044c \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0443. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0435 \u0440\u0430\u0437.',
+    unableToLogout: '\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0432\u044b\u0439\u0442\u0438. \u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0435\u0449\u0435 \u0440\u0430\u0437.',
   },
 }
 

@@ -6,7 +6,7 @@ function isAbortError(error: unknown) {
   return error instanceof DOMException && error.name === 'AbortError'
 }
 
-export function useParkingComplaints(parkingId: string) {
+export function useParkingComplaints(parkingId: string, refreshKey = 0) {
   const abortControllerRef = useRef<AbortController | null>(null)
   const [complaints, setComplaints] = useState<ParkingComplaint[]>([])
   const [error, setError] = useState<unknown>(null)
@@ -37,7 +37,7 @@ export function useParkingComplaints(parkingId: string) {
     return () => {
       abortController.abort()
     }
-  }, [parkingId])
+  }, [parkingId, refreshKey])
 
   return { complaints, error, isLoading }
 }

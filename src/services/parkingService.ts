@@ -1203,6 +1203,18 @@ export async function deleteParkingReview(reviewId: number) {
   }
 }
 
+export async function deleteParkingComplaint(complaintId: number) {
+  const client = getSupabaseClient()
+  const { error } = await client
+    .from(SUPABASE_TABLES.REPORTS)
+    .delete()
+    .eq('id', complaintId)
+
+  if (error) {
+    throw new Error(`Delete complaint failed: ${getSupabaseErrorMessage(error)}`)
+  }
+}
+
 export async function updateParking(parkingId: string, parking: CreateParkingInput) {
   const client = getSupabaseClient()
   const {

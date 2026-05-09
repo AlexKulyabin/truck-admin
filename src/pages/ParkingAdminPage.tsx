@@ -33,6 +33,7 @@ import { cn } from '../lib/cn'
 import {
   createParking,
   deleteParking,
+  deleteParkingComplaint,
   deleteParkingReview,
   getParkingForEdit,
   updateParking,
@@ -556,6 +557,12 @@ export function ParkingAdminPage() {
     setSelectedReview(null)
   }
 
+  async function handleDeleteComplaint(complaint: ParkingComplaint) {
+    await deleteParkingComplaint(complaint.id)
+    setReviewRefreshKey((currentKey) => currentKey + 1)
+    setSelectedComplaint(null)
+  }
+
   function handleCloseParkingDetails() {
     setSelectedParking(null)
     setEditingParkingId(null)
@@ -967,7 +974,7 @@ export function ParkingAdminPage() {
               complaint={selectedComplaint}
               onBack={handleCloseComplaintDetails}
               onClose={handleCloseComplaintDetails}
-              onDelete={() => undefined}
+              onDelete={() => handleDeleteComplaint(selectedComplaint)}
             />
           </div>
         ) : null}

@@ -532,7 +532,7 @@ export function ParkingDetailsPanel({
   const { author, isLoading: isAuthorLoading } = useParkingAuthor(parking.id)
   const { details: parkingDetails } = useParkingDetails(parking.id)
   const { complaints, isLoading: isComplaintsLoading } =
-    useParkingComplaints(parking.id)
+    useParkingComplaints(parking.id, refreshKey)
   const { isLoading: isPhotosLoading, photos } = useParkingPhotos(parking.id)
   const { isLoading: isReviewsLoading, reviews, summary: reviewSummary } =
     useParkingReviews(parking.id, refreshKey)

@@ -19,7 +19,7 @@ import { ParkingListRow } from './ParkingListRow'
 import { ParkingReviewCard } from './ParkingReviewCard'
 import { ParkingSearchField } from './ParkingSearchField'
 import { useParkingAdminPanels } from './useParkingAdminPanels'
-import { deleteParkingReview } from '../../services/parkingService'
+import { deleteParkingComplaint, deleteParkingReview } from '../../services/parkingService'
 
 type ParkingReviewsPanelProps = {
   onClose: () => void
@@ -241,36 +241,61 @@ function ParkingFeedDetailContent({
   const [activeTab, setActiveTab] = useState<ParkingFeedTabId>('reviews')
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [isDeletingReview, setIsDeletingReview] = useState(false)
+  const [isDeletingItem, setIsDeletingItem] = useState(false)
+  const [complaintToDelete, setComplaintToDelete] = useState<ParkingComplaint | null>(null)
   const [reviewToDelete, setReviewToDelete] = useState<ParkingReview | null>(null)
-  const [reviewRefreshKey, setReviewRefreshKey] = useState(0)
+  const [contentRefreshKey, setContentRefreshKey] = useState(0)
   const { complaints, error: complaintsError, isLoading: isComplaintsLoading } =
-    useParkingComplaints(parkingId)
+    useParkingComplaints(parkingId, refreshKey + contentRefreshKey)
   const { error: reviewsError, isLoading: isReviewsLoading, reviews, summary } =
-    useParkingReviews(parkingId, refreshKey + reviewRefreshKey)
+    useParkingReviews(parkingId, refreshKey + contentRefreshKey)
 
   const isShowingReviews = activeTab === 'reviews'
   const sectionTitle = isShowingReviews ? messages.allReviews : messages.allComplaints
 
   async function handleDeleteSelectedReview() {
-    if (!reviewToDelete || isDeletingReview) {
+    if (reviewToDelete === null || isDeletingItem) {
       return
     }
 
-    setIsDeletingReview(true)
+    setIsDeletingItem(true)
     setDeleteError(null)
 
     try {
       await deleteParkingReview(reviewToDelete.id)
-      setReviewRefreshKey((currentValue) => currentValue + 1)
+      setContentRefreshKey((currentValue) => currentValue + 1)
       setIsDeleteDialogOpen(false)
       setReviewToDelete(null)
+      setComplaintToDelete(null)
     } catch (error) {
       setDeleteError(
         error instanceof Error ? error.message : messages.unableToDeleteReview,
       )
     } finally {
-      setIsDeletingReview(false)
+      setIsDeletingItem(false)
+    }
+  }
+
+  async function handleDeleteSelectedComplaint() {
+    if (complaintToDelete === null || isDeletingItem) {
+      return
+    }
+
+    setIsDeletingItem(true)
+    setDeleteError(null)
+
+    try {
+      await deleteParkingComplaint(complaintToDelete.id)
+      setContentRefreshKey((currentValue) => currentValue + 1)
+      setIsDeleteDialogOpen(false)
+      setComplaintToDelete(null)
+      setReviewToDelete(null)
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error ? error.message : messages.unableToDeleteComplaint,
+      )
+    } finally {
+      setIsDeletingItem(false)
     }
   }
 
@@ -355,7 +380,12 @@ function ParkingFeedDetailContent({
                   actionDetailsLabel={messages.details}
                   complaint={complaint}
                   key={complaint.id}
-                  onDelete={() => undefined}
+                  onDelete={() => {
+                    setDeleteError(null)
+                    setReviewToDelete(null)
+                    setComplaintToDelete(complaint)
+                    setIsDeleteDialogOpen(true)
+                  }}
                   onDetails={
                     onOpenComplaintDetails
                       ? () => onOpenComplaintDetails(complaint)
@@ -371,19 +401,42 @@ function ParkingFeedDetailContent({
 
       {isDeleteDialogOpen ? (
         <ParkingReviewDeleteDialog
+          cancelLabel={
+            complaintToDelete
+              ? messages.deleteComplaintDialogCancel
+              : messages.deleteReviewDialogCancel
+          }
+          confirmLabel={
+            complaintToDelete
+              ? messages.deleteComplaintDialogConfirm
+              : messages.deleteReviewDialogConfirm
+          }
           error={deleteError}
-          isDeleting={isDeletingReview}
+          isDeleting={isDeletingItem}
           locale={locale}
           onCancel={() => {
-            if (isDeletingReview) {
+            if (isDeletingItem) {
               return
             }
 
             setDeleteError(null)
             setIsDeleteDialogOpen(false)
             setReviewToDelete(null)
+            setComplaintToDelete(null)
           }}
-          onConfirm={handleDeleteSelectedReview}
+          onConfirm={
+            complaintToDelete ? handleDeleteSelectedComplaint : handleDeleteSelectedReview
+          }
+          subtitle={
+            complaintToDelete
+              ? messages.deleteComplaintDialogSubtitle
+              : messages.deleteReviewDialogSubtitle
+          }
+          title={
+            complaintToDelete
+              ? messages.deleteComplaintDialogTitle
+              : messages.deleteReviewDialogTitle
+          }
         />
       ) : null}
     </>

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { X } from 'lucide-react'
 import arrowIcon from '../../assets/icons/arrow.svg'
 import commentIcon from '../../assets/icons/comment.svg'
@@ -10,6 +11,7 @@ import {
 import { useSystemLocale } from '../../hooks/useSystemLocale'
 import { cn } from '../../lib/cn'
 import type { ParkingComplaint } from '../../types/parking'
+import { ParkingReviewDeleteDialog } from './ParkingReviewDeleteDialog'
 
 type ParkingComplaintDetailsPanelProps = {
   complaint: ParkingComplaint
@@ -76,10 +78,33 @@ export function ParkingComplaintDetailsPanel({
 }: ParkingComplaintDetailsPanelProps) {
   const locale = useSystemLocale()
   const messages = getParkingMessages(locale)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDeletingComplaint, setIsDeletingComplaint] = useState(false)
   const authorName = complaint.authorName?.trim() || messages.anonymousUser
   const comment = complaint.comment?.trim() || messages.noComment
   const reportLabel =
     formatComplaintReportLabel(complaint.reportLabel, locale) || messages.noComplaints
+
+  async function handleDeleteComplaint() {
+    if (isDeletingComplaint) {
+      return
+    }
+
+    setIsDeletingComplaint(true)
+    setDeleteError(null)
+
+    try {
+      await onDelete?.()
+      setIsDeleteDialogOpen(false)
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error ? error.message : messages.unableToDeleteComplaint,
+      )
+    } finally {
+      setIsDeletingComplaint(false)
+    }
+  }
 
   return (
     <aside className="pointer-events-auto flex h-full w-full max-w-[24.5rem] flex-col overflow-hidden rounded-none border-r border-border bg-surface-muted shadow-[0_16px_40px_rgb(0_0_0_/_0.08)] md:max-w-[24.5rem]">
@@ -134,7 +159,10 @@ export function ParkingComplaintDetailsPanel({
             className={cn(
               'flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-surface px-6 font-heading text-base leading-6 font-medium text-text-primary shadow-card transition hover:bg-surface-muted',
             )}
-            onClick={onDelete}
+            onClick={() => {
+              setDeleteError(null)
+              setIsDeleteDialogOpen(true)
+            }}
             type="button"
           >
             <img alt="" aria-hidden="true" className="size-6 shrink-0" src={trashIcon} />
@@ -142,6 +170,27 @@ export function ParkingComplaintDetailsPanel({
           </button>
         </div>
       </div>
+
+      {isDeleteDialogOpen ? (
+        <ParkingReviewDeleteDialog
+          cancelLabel={messages.deleteComplaintDialogCancel}
+          confirmLabel={messages.deleteComplaintDialogConfirm}
+          error={deleteError}
+          isDeleting={isDeletingComplaint}
+          locale={locale}
+          onCancel={() => {
+            if (isDeletingComplaint) {
+              return
+            }
+
+            setDeleteError(null)
+            setIsDeleteDialogOpen(false)
+          }}
+          onConfirm={handleDeleteComplaint}
+          subtitle={messages.deleteComplaintDialogSubtitle}
+          title={messages.deleteComplaintDialogTitle}
+        />
+      ) : null}
     </aside>
   )
 }

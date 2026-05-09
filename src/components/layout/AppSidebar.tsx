@@ -9,7 +9,7 @@ import requestsGrayIcon from '../../assets/icons/requests-gray.svg'
 import reviewsBlueIcon from '../../assets/icons/reviews-blue.svg'
 import reviewsGrayIcon from '../../assets/icons/reviews-gray.svg'
 import logo from '../../assets/logos/logo.svg'
-import { formatCompactCount } from '../../constants/parkingI18n'
+import { formatCompactCount, getParkingMessages } from '../../constants/parkingI18n'
 import { useParkingAdminPanels } from '../../features/parking/useParkingAdminPanels'
 import { useParkingRequestCounts } from '../../hooks/useParkingRequestCounts'
 import { useSystemLocale } from '../../hooks/useSystemLocale'
@@ -25,6 +25,7 @@ type SidebarItem = {
 }
 
 type AppSidebarProps = {
+  messages: ReturnType<typeof getParkingMessages>
   onLogout: () => void
   userEmail?: string | null
 }
@@ -90,7 +91,7 @@ function SidebarButton({
   )
 }
 
-export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
+export function AppSidebar({ messages, onLogout, userEmail }: AppSidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const {
     activePanel,
@@ -211,13 +212,13 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
           />
         ))}
         <button
-          aria-label="Log out"
+          aria-label={messages.logout}
           className="flex size-12 items-center justify-center rounded-[10px] transition hover:bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
           onClick={(event) => {
             stopSidebarToggle(event)
             onLogout()
           }}
-          title="Log out"
+          title={messages.logout}
           type="button"
         >
           <img alt="" aria-hidden="true" className="size-6" src={logoutIcon} />
@@ -226,7 +227,7 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
 
       <div className="hidden md:block">
         <button
-          aria-label="Log out"
+          aria-label={messages.logout}
           className={cn(
             'flex h-12 w-full items-center rounded-[10px] bg-surface transition hover:bg-map-marker-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
             isExpanded ? 'gap-4' : 'justify-center',
@@ -235,7 +236,7 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
             stopSidebarToggle(event)
             onLogout()
           }}
-          title="Log out"
+          title={messages.logout}
           type="button"
         >
           <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px]">
@@ -244,7 +245,7 @@ export function AppSidebar({ onLogout, userEmail }: AppSidebarProps) {
           {isExpanded && (
             <span className="min-w-0 text-left">
               <span className="block text-base font-medium text-text-primary">
-                Log out
+                {messages.logout}
               </span>
               <span className="block truncate text-sm leading-4 text-text-secondary">
                 {displayEmail}

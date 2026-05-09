@@ -2,25 +2,32 @@ import { useState, type PropsWithChildren } from 'react'
 import { useNavigate } from 'react-router-dom'
 import logoutBigIcon from '../assets/icons/logout-big.svg'
 import { AppSidebar } from '../components/layout/AppSidebar'
+import { getParkingMessages } from '../constants/parkingI18n'
 import { useAuth } from '../features/auth/useAuth'
 import { ParkingAdminPanelsProvider } from '../features/parking/ParkingAdminPanelsProvider'
+import { useSystemLocale } from '../hooks/useSystemLocale'
 
-function getErrorMessage(error: unknown) {
+function getErrorMessage(
+  error: unknown,
+  messages: ReturnType<typeof getParkingMessages>,
+) {
   if (error instanceof Error && error.message) {
     return error.message
   }
 
-  return 'Unable to log out. Please try again.'
+  return messages.unableToLogout
 }
 
 function LogoutDialog({
   error,
   isSubmitting,
+  messages,
   onCancel,
   onConfirm,
 }: {
   error: string | null
   isSubmitting: boolean
+  messages: ReturnType<typeof getParkingMessages>
   onCancel: () => void
   onConfirm: () => void
 }) {
@@ -35,7 +42,7 @@ function LogoutDialog({
           <img alt="" aria-hidden="true" className="size-20" src={logoutBigIcon} />
           <div className="flex w-full flex-col items-center gap-2">
             <h2 className="text-center font-heading text-xl leading-7 font-medium text-black">
-              Are you sure you want to log out of your account?
+              {messages.logoutDialogTitle}
             </h2>
           </div>
           {error ? (
@@ -50,7 +57,7 @@ function LogoutDialog({
               onClick={onCancel}
               type="button"
             >
-              Cancel
+              {messages.logoutDialogCancel}
             </button>
             <button
               className="flex h-14 flex-1 items-center justify-center rounded-xl bg-primary px-6 font-heading text-base leading-6 font-medium tracking-tight text-white transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
@@ -58,7 +65,7 @@ function LogoutDialog({
               onClick={onConfirm}
               type="button"
             >
-              {isSubmitting ? 'Logging out...' : 'Log out'}
+              {isSubmitting ? messages.loggingOut : messages.logoutDialogConfirm}
             </button>
           </div>
         </div>
@@ -70,6 +77,8 @@ function LogoutDialog({
 export function AppShell({ children }: PropsWithChildren) {
   const navigate = useNavigate()
   const { logout, user } = useAuth()
+  const locale = useSystemLocale()
+  const messages = getParkingMessages(locale)
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [logoutError, setLogoutError] = useState<string | null>(null)
@@ -97,7 +106,7 @@ export function AppShell({ children }: PropsWithChildren) {
       setIsLogoutDialogOpen(false)
       navigate('/')
     } catch (error) {
-      setLogoutError(getErrorMessage(error))
+      setLogoutError(getErrorMessage(error, messages))
     } finally {
       setIsLoggingOut(false)
     }
@@ -106,12 +115,17 @@ export function AppShell({ children }: PropsWithChildren) {
   return (
     <ParkingAdminPanelsProvider>
       <div className="grid min-h-screen bg-background md:grid-cols-[auto_minmax(0,1fr)]">
-        <AppSidebar onLogout={handleOpenLogoutDialog} userEmail={user?.email} />
+        <AppSidebar
+          messages={messages}
+          onLogout={handleOpenLogoutDialog}
+          userEmail={user?.email}
+        />
         <main className="min-w-0 md:order-none">{children}</main>
       </div>
       {isLogoutDialogOpen ? (
         <LogoutDialog
           error={logoutError}
+          messages={messages}
           isSubmitting={isLoggingOut}
           onCancel={handleCloseLogoutDialog}
           onConfirm={() => void handleConfirmLogout()}

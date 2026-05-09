@@ -217,39 +217,48 @@ function getReviewDetailSections(locale: SupportedLocale) {
 
 function getReviewSections(review: ParkingReview, locale: SupportedLocale) {
   const fallbackSections = getReviewDetailSections(locale)
+  const sectionRatings = [
+    {
+      kind: 'impression' as const,
+      section: fallbackSections[0],
+      value: review.ratingImpression,
+    },
+    {
+      kind: 'arrival' as const,
+      section: fallbackSections[1],
+      value: review.ratingArrival,
+    },
+    {
+      kind: 'security' as const,
+      section: fallbackSections[2],
+      value: review.ratingSecurity,
+    },
+    {
+      kind: 'infrastructure' as const,
+      section: fallbackSections[3],
+      value: review.ratingInfrastructure,
+    },
+    {
+      kind: 'comfort' as const,
+      section: fallbackSections[4],
+      value: review.ratingComfort,
+    },
+  ]
 
-  return [
-    {
-      ...fallbackSections[0],
-      subtitle:
-        formatReviewDetailRating('impression', review.ratingImpression, locale) ??
-        fallbackSections[0].subtitle,
-    },
-    {
-      ...fallbackSections[1],
-      subtitle:
-        formatReviewDetailRating('arrival', review.ratingArrival, locale) ??
-        fallbackSections[1].subtitle,
-    },
-    {
-      ...fallbackSections[2],
-      subtitle:
-        formatReviewDetailRating('security', review.ratingSecurity, locale) ??
-        fallbackSections[2].subtitle,
-    },
-    {
-      ...fallbackSections[3],
-      subtitle:
-        formatReviewDetailRating('infrastructure', review.ratingInfrastructure, locale) ??
-        fallbackSections[3].subtitle,
-    },
-    {
-      ...fallbackSections[4],
-      subtitle:
-        formatReviewDetailRating('comfort', review.ratingComfort, locale) ??
-        fallbackSections[4].subtitle,
-    },
-  ] as const
+  return sectionRatings.flatMap(({ kind, section, value }) => {
+    const subtitle = formatReviewDetailRating(kind, value, locale)
+
+    if (subtitle === null) {
+      return []
+    }
+
+    return [
+      {
+        ...section,
+        subtitle,
+      },
+    ]
+  })
 }
 
 export function ParkingReviewDetailsPanel({
