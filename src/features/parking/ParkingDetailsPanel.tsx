@@ -372,7 +372,7 @@ function ReviewsContent({
           {messages.allReviews}
         </h3>
 
-        {summary.reviewsCount === 0 ? (
+        {reviews.length === 0 ? (
           <div className="rounded-[10px] bg-surface px-4 py-5 font-heading text-sm font-normal text-text-secondary shadow-card">
             {messages.noReviews}
           </div>

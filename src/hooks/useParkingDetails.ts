@@ -17,9 +17,11 @@ export function useParkingDetails(parkingId: string) {
 
     const abortController = new AbortController()
     abortControllerRef.current = abortController
+    setIsLoading(true)
 
     getParkingDetails(parkingId)
       .then((nextDetails) => {
+        if (abortController.signal.aborted) return
         setDetails(nextDetails)
         setError(null)
       })
@@ -29,7 +31,7 @@ export function useParkingDetails(parkingId: string) {
         }
       })
       .finally(() => {
-        if (abortControllerRef.current === abortController) {
+        if (!abortController.signal.aborted) {
           setIsLoading(false)
         }
       })

@@ -17,9 +17,11 @@ export function useParkingComplaints(parkingId: string, refreshKey = 0) {
 
     const abortController = new AbortController()
     abortControllerRef.current = abortController
+    setIsLoading(true)
 
     listParkingComplaints(parkingId, abortController.signal)
       .then((nextComplaints) => {
+        if (abortController.signal.aborted) return
         setComplaints(nextComplaints)
         setError(null)
       })
@@ -29,7 +31,7 @@ export function useParkingComplaints(parkingId: string, refreshKey = 0) {
         }
       })
       .finally(() => {
-        if (abortControllerRef.current === abortController) {
+        if (!abortController.signal.aborted) {
           setIsLoading(false)
         }
       })

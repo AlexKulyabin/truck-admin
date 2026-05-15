@@ -30,12 +30,14 @@ export function useParkingReviews(parkingId: string, refreshKey = 0) {
 
     const abortController = new AbortController()
     abortControllerRef.current = abortController
+    setIsLoading(true)
 
     Promise.all([
       getParkingReviewSummary(parkingId, abortController.signal),
       listParkingReviews(parkingId, abortController.signal),
     ])
       .then(([nextSummary, nextReviews]) => {
+        if (abortController.signal.aborted) return
         setSummary(nextSummary)
         setReviews(nextReviews)
         setError(null)
@@ -46,7 +48,7 @@ export function useParkingReviews(parkingId: string, refreshKey = 0) {
         }
       })
       .finally(() => {
-        if (abortControllerRef.current === abortController) {
+        if (!abortController.signal.aborted) {
           setIsLoading(false)
         }
       })

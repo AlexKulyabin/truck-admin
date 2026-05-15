@@ -17,9 +17,11 @@ export function useParkingPhotos(parkingId: string) {
 
     const abortController = new AbortController()
     abortControllerRef.current = abortController
+    setIsLoading(true)
 
     listParkingPhotos(parkingId, abortController.signal)
       .then((nextPhotos) => {
+        if (abortController.signal.aborted) return
         setPhotos(nextPhotos)
         setError(null)
       })
@@ -29,7 +31,7 @@ export function useParkingPhotos(parkingId: string) {
         }
       })
       .finally(() => {
-        if (abortControllerRef.current === abortController) {
+        if (!abortController.signal.aborted) {
           setIsLoading(false)
         }
       })

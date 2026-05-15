@@ -9,6 +9,7 @@ function isAbortError(error: unknown) {
 const EMPTY_AUTHOR: ParkingAuthor = {
   avatarUrl: null,
   fullName: null,
+  id: null,
 }
 
 export function useParkingAuthor(parkingId: string) {
@@ -22,9 +23,11 @@ export function useParkingAuthor(parkingId: string) {
 
     const abortController = new AbortController()
     abortControllerRef.current = abortController
+    setIsLoading(true)
 
     getParkingAuthor(parkingId, abortController.signal)
       .then((nextAuthor) => {
+        if (abortController.signal.aborted) return
         setAuthor(nextAuthor)
         setError(null)
       })
@@ -34,7 +37,7 @@ export function useParkingAuthor(parkingId: string) {
         }
       })
       .finally(() => {
-        if (abortControllerRef.current === abortController) {
+        if (!abortController.signal.aborted) {
           setIsLoading(false)
         }
       })
