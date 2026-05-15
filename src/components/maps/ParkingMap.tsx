@@ -105,6 +105,8 @@ function getMapRequest(map: google.maps.Map) {
 }
 
 function ParkingMarkerLayer({ onSelectParking, refreshKey }: ParkingMapProps) {
+  const locale = useSystemLocale()
+  const messages = getParkingMessages(locale)
   const map = useMap()
   const idleDebounceRef = useRef<ReturnType<typeof window.setTimeout> | null>(
     null,
@@ -165,7 +167,7 @@ function ParkingMarkerLayer({ onSelectParking, refreshKey }: ParkingMapProps) {
         map: currentMap,
         optimized: true,
         position: { lat: item.latitude, lng: item.longitude },
-        title: isCluster ? `${item.count} parkings` : (item.address ?? 'Parking'),
+        title: isCluster ? String(item.count) : (item.address ?? messages.noAddress),
         zIndex: isCluster ? Number(maps.Marker.MAX_ZINDEX) + item.count : 1,
       })
 
@@ -189,7 +191,7 @@ function ParkingMarkerLayer({ onSelectParking, refreshKey }: ParkingMapProps) {
         onSelectParking?.(item)
       }
     }
-  }, [map, onSelectParking, parkingItems])
+  }, [map, messages.noAddress, onSelectParking, parkingItems])
 
   if (!error && !isLoading) {
     return null
@@ -197,7 +199,7 @@ function ParkingMarkerLayer({ onSelectParking, refreshKey }: ParkingMapProps) {
 
   return (
     <div className="pointer-events-none absolute right-4 top-4 rounded-md bg-surface px-3 py-2 text-sm text-text-secondary shadow-sm">
-      {error ? 'Unable to load parkings' : 'Loading parkings...'}
+      {error ? messages.unableToLoadParkingList : messages.loading}
     </div>
   )
 }
@@ -351,17 +353,19 @@ export function ParkingMap({
   onSelectParking,
   refreshKey,
 }: ParkingMapProps = {}) {
+  const locale = useSystemLocale()
+  const messages = getParkingMessages(locale)
+
   if (!mapsConfig.apiKey) {
     return (
       <section className="flex min-h-[520px] items-center justify-center rounded-lg border border-dashed border-form-border bg-surface p-6 text-center">
         <div className="max-w-md">
           <MapPinned className="mx-auto mb-3 text-map-marker" size={36} />
           <h2 className="text-lg font-semibold text-text-primary">
-            Google Maps key is not configured
+            {messages.googleMapsKeyNotConfigured}
           </h2>
           <p className="mt-2 text-sm text-text-muted">
-            Create a local .env file from .env.example and set
-            VITE_GOOGLE_MAPS_API_KEY.
+            {messages.googleMapsKeyInstructions}
           </p>
         </div>
       </section>

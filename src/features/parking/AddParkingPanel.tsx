@@ -207,7 +207,7 @@ export function AddParkingPanel({
       autocompleteServiceRef.current?.getPlacePredictions(
         {
           input: trimmedAddress,
-          language: 'en',
+          language: locale,
           types: ['address'],
         },
         (predictions, status) => {
@@ -237,6 +237,7 @@ export function AddParkingPanel({
     draft.address,
     isSelectingSuggestion,
     isUserSearchingAddress,
+    locale,
     messages.noAddress,
   ])
 

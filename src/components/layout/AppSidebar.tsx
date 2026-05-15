@@ -111,40 +111,35 @@ export function AppSidebar({ messages, onLogout, userEmail }: AppSidebarProps) {
     requestCounts.pending > 0
       ? formatCompactCount(requestCounts.pending, locale)
       : undefined
-
-  function navigateTo(nextPanel: () => void) {
-    nextPanel()
-  }
-
   const navigationItems: SidebarItem[] = [
     {
       activeIcon: menuBlueIcon,
       icon: menuGrayIcon,
       id: 'parking-list',
-      label: 'Parking list',
-      onClick: () => navigateTo(showParkingList),
+      label: messages.parkingList,
+      onClick: showParkingList,
     },
     {
       activeIcon: addParkingBlueIcon,
       icon: addParkingGrayIcon,
       id: 'add-parking',
-      label: 'Add parking',
-      onClick: () => navigateTo(showAddParking),
+      label: messages.addParking,
+      onClick: showAddParking,
     },
     {
       activeIcon: requestsBlueIcon,
       badge: pendingRequestsBadge,
       icon: requestsGrayIcon,
       id: 'requests',
-      label: 'Requests',
-      onClick: () => navigateTo(showRequests),
+      label: messages.requests,
+      onClick: showRequests,
     },
     {
       activeIcon: reviewsBlueIcon,
       icon: reviewsGrayIcon,
       id: 'reviews',
-      label: 'Reviews',
-      onClick: () => navigateTo(showReviews),
+      label: messages.reviews,
+      onClick: showReviews,
     },
   ]
 
@@ -177,7 +172,7 @@ export function AppSidebar({ messages, onLogout, userEmail }: AppSidebarProps) {
           )}
         </div>
 
-        <nav aria-label="Main navigation" className="flex flex-col gap-4">
+        <nav aria-label={messages.mainNavigation} className="flex flex-col gap-4">
           {navigationItems.map((item) => (
             <SidebarButton
               key={item.id}
@@ -195,7 +190,7 @@ export function AppSidebar({ messages, onLogout, userEmail }: AppSidebarProps) {
       </div>
 
       <nav
-        aria-label="Main navigation"
+        aria-label={messages.mainNavigation}
         className="grid w-full grid-cols-5 items-center justify-items-center gap-2 px-3 py-2 md:hidden"
       >
         {navigationItems.map((item) => (

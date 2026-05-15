@@ -36,6 +36,8 @@ type Messages = {
   info: string
   laundry: string
   loading: string
+  googleMapsKeyInstructions: string
+  googleMapsKeyNotConfigured: string
   loadingComplaints: string
   loadingPhotos: string
   loadingReviews: string
@@ -102,6 +104,7 @@ type Messages = {
   logoutDialogCancel: string
   logoutDialogConfirm: string
   logoutDialogTitle: string
+  mainNavigation: string
   readLess: string
   readMore: string
   recreationArea: string
@@ -159,20 +162,23 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     info: 'Info',
     laundry: 'Laundry',
     loading: 'Loading...',
-  loadingComplaints: 'Loading complaints...',
-  loadingPhotos: 'Loading photos...',
-  loadingReviews: 'Loading reviews...',
-  loggingOut: 'Logging out...',
-  mainImpression: 'The main impression',
-  accepted: 'Accepted',
-  new: 'New',
-  approvalDialogTitle: 'The request has been approved',
-  approvalDialogSubtitle: 'Parking will be displayed on the map',
-  great: 'Great',
-  convenienceOfTruckArrival: 'Convenience of truck arrival',
-  veryConvenient: 'Very convenient',
-  securityLevel: 'Security level',
-  absolutelySafe: 'Absolutely safe',
+    googleMapsKeyInstructions:
+      'Create a local .env file from .env.example and set VITE_GOOGLE_MAPS_API_KEY.',
+    googleMapsKeyNotConfigured: 'Google Maps key is not configured',
+    loadingComplaints: 'Loading complaints...',
+    loadingPhotos: 'Loading photos...',
+    loadingReviews: 'Loading reviews...',
+    loggingOut: 'Logging out...',
+    mainImpression: 'The main impression',
+    accepted: 'Accepted',
+    new: 'New',
+    approvalDialogTitle: 'The request has been approved',
+    approvalDialogSubtitle: 'Parking will be displayed on the map',
+    great: 'Great',
+    convenienceOfTruckArrival: 'Convenience of truck arrival',
+    veryConvenient: 'Very convenient',
+    securityLevel: 'Security level',
+    absolutelySafe: 'Absolutely safe',
     infrastructure: 'Infrastructure',
     everythingThatWasStatedInTheDescription: 'Everything that was stated in the description',
     comfortForRelaxation: 'Comfort for relaxation',
@@ -225,6 +231,7 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     logoutDialogCancel: 'Cancel',
     logoutDialogConfirm: 'Log out',
     logoutDialogTitle: 'Are you sure you want to log out of your account?',
+    mainNavigation: 'Main navigation',
     readLess: 'Read less',
     readMore: 'Read more',
     recreationArea: 'Recreation area',
@@ -279,7 +286,9 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     hotel: '\u041e\u0442\u0435\u043b\u044c',
     info: '\u0418\u043d\u0444\u043e',
     laundry: '\u041f\u0440\u0430\u0447\u0435\u0447\u043d\u0430\u044f',
-  loading: '\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0430...',
+    loading: '\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0430...',
+    googleMapsKeyInstructions: '\u0421\u043e\u0437\u0434\u0430\u0439\u0442\u0435 \u043b\u043e\u043a\u0430\u043b\u044c\u043d\u044b\u0439 \u0444\u0430\u0439\u043b .env \u043d\u0430 \u043e\u0441\u043d\u043e\u0432\u0435 .env.example \u0438 \u0443\u043a\u0430\u0436\u0438\u0442\u0435 VITE_GOOGLE_MAPS_API_KEY.',
+    googleMapsKeyNotConfigured: '\u041a\u043b\u044e\u0447 Google Maps \u043d\u0435 \u043d\u0430\u0441\u0442\u0440\u043e\u0435\u043d.',
   loadingComplaints: '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u0436\u0430\u043b\u043e\u0431\u044b...',
   loadingPhotos: '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u0444\u043e\u0442\u043e\u0433\u0440\u0430\u0444\u0438\u0438...',
   loadingReviews: '\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043c \u043e\u0442\u0437\u044b\u0432\u044b...',
@@ -323,14 +332,17 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
   rejectionReasonIncompleteData: '\u041d\u0435\u043f\u043e\u043b\u043d\u044b\u0435 \u0434\u0430\u043d\u043d\u044b\u0435',
   rejectionReasonNotMeetingRequirements: '\u041d\u0435 \u0441\u043e\u043e\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0443\u0435\u0442 \u0442\u0440\u0435\u0431\u043e\u0432\u0430\u043d\u0438\u044f\u043c',
   requests: '\u0417\u0430\u044f\u0432\u043a\u0438',
-  noAddress: '\u041d\u0435\u0442 \u0430\u0434\u0440\u0435\u0441\u0430',
-  noComplaints: '\u0414\u043b\u044f \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u0436\u0430\u043b\u043e\u0431.',
-  noParkings: '\u041f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b.',
-  noRequests: '\u0417\u0430\u044f\u0432\u043a\u0438 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b.',
-  noPhoto: '\u041d\u0435\u0442 \u0444\u043e\u0442\u043e',
-  noPhotos: '\u0423 \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u0444\u043e\u0442\u043e\u0433\u0440\u0430\u0444\u0438\u0439.',
-  noComment: '\u041d\u0435\u0442 \u043a\u043e\u043c\u043c\u0435\u043d\u0442\u0430\u0440\u0438\u044f',
-  noReviews: '\u0414\u043b\u044f \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u043e\u0442\u0437\u044b\u0432\u043e\u0432.',
+    noAddress: '\u041d\u0435\u0442 \u0430\u0434\u0440\u0435\u0441\u0430',
+    noComplaints:
+      '\u0414\u043b\u044f \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u0436\u0430\u043b\u043e\u0431.',
+    noParkings: '\u041f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b.',
+    noRequests: '\u0417\u0430\u044f\u0432\u043a\u0438 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b.',
+    noPhoto: '\u041d\u0435\u0442 \u0444\u043e\u0442\u043e',
+    noPhotos:
+      '\u0423 \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u0444\u043e\u0442\u043e\u0433\u0440\u0430\u0444\u0438\u0439.',
+    noComment: '\u041d\u0435\u0442 \u043a\u043e\u043c\u043c\u0435\u043d\u0442\u0430\u0440\u0438\u044f',
+    noReviews:
+      '\u0414\u043b\u044f \u044d\u0442\u043e\u0439 \u043f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442 \u043e\u0442\u0437\u044b\u0432\u043e\u0432.',
     noReviewParkings: '\u041f\u0430\u0440\u043a\u043e\u0432\u043a\u0438 \u0441 \u043e\u0442\u0437\u044b\u0432\u0430\u043c\u0438 \u0438\u043b\u0438 \u0436\u0430\u043b\u043e\u0431\u0430\u043c\u0438 \u043d\u0435 \u043d\u0430\u0439\u0434\u0435\u043d\u044b.',
     noProfileReviews: '\u041d\u0435\u0442 \u043e\u0442\u0437\u044b\u0432\u043e\u0432',
     noProfileComplaints: '\u041d\u0435\u0442 \u0436\u0430\u043b\u043e\u0431',
@@ -346,6 +358,7 @@ const messagesByLocale: Record<SupportedLocale, Messages> = {
     logoutDialogCancel: '\u041e\u0442\u043c\u0435\u043d\u0430',
     logoutDialogConfirm: '\u0412\u044b\u0439\u0442\u0438',
     logoutDialogTitle: '\u0422\u044b \u0443\u0432\u0435\u0440\u0435\u043d, \u0447\u0442\u043e \u0445\u043e\u0447\u0435\u0448\u044c \u0432\u044b\u0439\u0442\u0438 \u0438\u0437 \u0430\u043a\u043a\u0430\u0443\u043d\u0442\u0430?',
+    mainNavigation: '\u0413\u043b\u0430\u0432\u043d\u043e\u0435 \u043c\u0435\u043d\u044e',
     readLess: '\u0421\u0432\u0435\u0440\u043d\u0443\u0442\u044c',
     readMore: '\u0427\u0438\u0442\u0430\u0442\u044c \u0434\u0430\u043b\u044c\u0448\u0435',
     recreationArea: '\u0417\u043e\u043d\u0430 \u043e\u0442\u0434\u044b\u0445\u0430',

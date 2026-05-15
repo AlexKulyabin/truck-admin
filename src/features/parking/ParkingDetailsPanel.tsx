@@ -504,6 +504,7 @@ export function ParkingDetailsPanel({
   onOpenComplaintDetails,
   onReject,
   onOpenAuthorProfile,
+  onOpenReviewDetails,
   parking,
   refreshKey = 0,
   statusError = null,

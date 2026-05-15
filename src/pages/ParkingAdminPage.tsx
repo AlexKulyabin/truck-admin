@@ -861,7 +861,7 @@ export function ParkingAdminPage() {
   }
 
   return (
-    <APIProvider apiKey={mapsConfig.apiKey} language="en" libraries={['places']}>
+    <APIProvider apiKey={mapsConfig.apiKey} language={locale} libraries={['places']}>
       <div className="relative min-h-screen bg-background">
         <ParkingMap
           addParkingDraft={isParkingFormOpen ? addParkingDraft : null}
