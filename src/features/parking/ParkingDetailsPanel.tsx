@@ -33,6 +33,7 @@ import { useParkingPhotos } from '../../hooks/useParkingPhotos'
 import { useParkingReviews } from '../../hooks/useParkingReviews'
 import { useSystemLocale } from '../../hooks/useSystemLocale'
 import { cn } from '../../lib/cn'
+import { deleteParkingReview } from '../../services/parkingService'
 import type {
   ParkingAuthor,
   ParkingComplaint,
@@ -41,6 +42,7 @@ import type {
   ParkingRatingSummary,
   ParkingReview,
 } from '../../types/parking'
+import { ParkingReviewDeleteDialog } from './ParkingReviewDeleteDialog'
 
 type ParkingDetailsPanelProps = {
   isUpdatingStatus?: boolean
@@ -343,11 +345,13 @@ function ReviewSummary({
 function ReviewsContent({
   isLoading,
   locale,
+  onDeleteReview,
   onOpenReviewDetails,
   reviews,
   summary,
 }: {
   isLoading: boolean
+  onDeleteReview?: (_review: ParkingReview) => void
   onOpenReviewDetails?: (_review: ParkingReview) => void
   locale: SupportedLocale
   reviews: ParkingReview[]
@@ -380,13 +384,16 @@ function ReviewsContent({
           <div className="space-y-4">
             {reviews.map((review) => (
               <ParkingReviewCard
+                actionDeleteLabel={messages.delete}
                 actionDetailsLabel={messages.details}
                 key={review.id}
+                onDelete={onDeleteReview ? () => onDeleteReview(review) : undefined}
                 onDetails={
                   onOpenReviewDetails ? () => onOpenReviewDetails(review) : undefined
                 }
                 review={review}
                 showActions
+                showAuthorName
               />
             ))}
           </div>
@@ -513,9 +520,14 @@ export function ParkingDetailsPanel({
   const messages = getParkingMessages(locale)
   const [activeTab, setActiveTab] = useState<DetailTabId>('info')
   const [activePhotoIndex, setActivePhotoIndex] = useState(0)
+  const [contentRefreshKey, setContentRefreshKey] = useState(0)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDeletingReview, setIsDeletingReview] = useState(false)
   const [heroDragOffset, setHeroDragOffset] = useState(0)
   const [isHeroDragging, setIsHeroDragging] = useState(false)
   const [isTabsDragging, setIsTabsDragging] = useState(false)
+  const [reviewToDelete, setReviewToDelete] = useState<ParkingReview | null>(null)
   const heroDragStateRef = useRef({
     currentOffset: 0,
     inputType: null as 'mouse' | 'pointer' | null,
@@ -533,10 +545,10 @@ export function ParkingDetailsPanel({
   const { author, isLoading: isAuthorLoading } = useParkingAuthor(parking.id)
   const { details: parkingDetails } = useParkingDetails(parking.id)
   const { complaints, isLoading: isComplaintsLoading } =
-    useParkingComplaints(parking.id, refreshKey)
+    useParkingComplaints(parking.id, refreshKey + contentRefreshKey)
   const { isLoading: isPhotosLoading, photos } = useParkingPhotos(parking.id)
   const { isLoading: isReviewsLoading, reviews, summary: reviewSummary } =
-    useParkingReviews(parking.id, refreshKey)
+    useParkingReviews(parking.id, refreshKey + contentRefreshKey)
   const detail = buildParkingDetailModelFromRecord(parking, parkingDetails)
   const tabs = buildLocalizedTabs(
     reviewSummary.reviewsCount,
@@ -555,6 +567,34 @@ export function ParkingDetailsPanel({
   const authorName = author.fullName?.trim() || messages.anonymousUser
   const authorInitial = authorName.charAt(0).toUpperCase()
   const canOpenAuthorProfile = Boolean(author.id && onOpenAuthorProfile)
+
+  async function handleDeleteSelectedReview() {
+    if (reviewToDelete === null || isDeletingReview) {
+      return
+    }
+
+    setIsDeletingReview(true)
+    setDeleteError(null)
+
+    try {
+      await deleteParkingReview(reviewToDelete.id)
+      setContentRefreshKey((currentValue) => currentValue + 1)
+      setIsDeleteDialogOpen(false)
+      setReviewToDelete(null)
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error ? error.message : messages.unableToDeleteReview,
+      )
+    } finally {
+      setIsDeletingReview(false)
+    }
+  }
+
+  function handleOpenDeleteReviewDialog(review: ParkingReview) {
+    setDeleteError(null)
+    setReviewToDelete(review)
+    setIsDeleteDialogOpen(true)
+  }
 
   function cleanupHeroMouseListeners() {
     window.removeEventListener('mousemove', handleHeroMouseMove)
@@ -995,6 +1035,7 @@ export function ParkingDetailsPanel({
           <ReviewsContent
             isLoading={isReviewsLoading}
             locale={locale}
+            onDeleteReview={handleOpenDeleteReviewDialog}
             onOpenReviewDetails={onOpenReviewDetails}
             reviews={reviews}
             summary={reviewSummary}
@@ -1016,6 +1057,27 @@ export function ParkingDetailsPanel({
           />
         ) : null}
       </div>
+      {isDeleteDialogOpen ? (
+        <ParkingReviewDeleteDialog
+          cancelLabel={messages.deleteReviewDialogCancel}
+          confirmLabel={messages.deleteReviewDialogConfirm}
+          error={deleteError}
+          isDeleting={isDeletingReview}
+          locale={locale}
+          onCancel={() => {
+            if (isDeletingReview) {
+              return
+            }
+
+            setDeleteError(null)
+            setIsDeleteDialogOpen(false)
+            setReviewToDelete(null)
+          }}
+          onConfirm={handleDeleteSelectedReview}
+          subtitle={messages.deleteReviewDialogSubtitle}
+          title={messages.deleteReviewDialogTitle}
+        />
+      ) : null}
     </aside>
   )
 }

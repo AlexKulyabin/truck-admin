@@ -46,6 +46,7 @@ import type {
   ParkingAuthor,
   ParkingComplaint,
   ParkingReview,
+  ParkingRequestItem,
 } from '../types/parking'
 
 type SuccessDialogContent = {
@@ -371,6 +372,11 @@ export function ParkingAdminPage() {
   const parkingDetailsReturnPanelRef = useRef<ReturnType<
     typeof useParkingAdminPanels
   >['activePanel']>(null)
+  const addParkingReturnPanelRef = useRef<ReturnType<
+    typeof useParkingAdminPanels
+  >['activePanel']>(null)
+  const addParkingReturnRequestTabRef = useRef<ParkingRequestItem['status'] | null>(null)
+  const requestsActiveTabRef = useRef<ParkingRequestItem['status']>(requestsDefaultTab)
   const authorProfileReturnPanelRef = useRef<ReturnType<typeof useParkingAdminPanels>['activePanel']>(null)
   const complaintDetailsReturnPanelRef = useRef<ReturnType<typeof useParkingAdminPanels>['activePanel']>(null)
   const reviewDetailsReturnPanelRef = useRef<ReturnType<typeof useParkingAdminPanels>['activePanel']>(null)
@@ -385,6 +391,9 @@ export function ParkingAdminPage() {
     const previousPanel = previousPanelRef.current
 
     if (activePanel === 'add-parking' && previousPanel !== 'add-parking') {
+      addParkingReturnPanelRef.current = previousPanel ?? 'parking-list'
+      addParkingReturnRequestTabRef.current =
+        previousPanel === 'requests' ? requestsActiveTabRef.current : null
       setEditingParkingId(null)
       setSaveParkingError(null)
       setAddParkingDraft(loadAddParkingDraft())
@@ -417,14 +426,21 @@ export function ParkingAdminPage() {
     authorProfileReturnPanelRef.current = null
   }, [navigationKey])
 
-  function handleSelectParking(parking: ParkingMapItem | ParkingListItem, fromRequests = false) {
+  function handleSelectParking(
+    parking: ParkingMapItem | ParkingListItem | ParkingRequestItem,
+    requestTab: ParkingRequestItem['status'] | null = null,
+  ) {
     setEditingParkingId(null)
     setSaveParkingError(null)
     setStatusError(null)
     setSelectedAuthor(null)
     setSelectedComplaint(null)
     setSelectedReview(null)
-    setDetailsMode(fromRequests ? 'request' : 'default')
+    if (requestTab !== null) {
+      setRequestsDefaultTab(requestTab)
+      requestsActiveTabRef.current = requestTab
+    }
+    setDetailsMode(requestTab === 'pending' ? 'request' : 'default')
     setSelectedParking(parking)
     parkingDetailsReturnPanelRef.current = activePanel
     setFocusedParking({
@@ -432,6 +448,54 @@ export function ParkingAdminPage() {
       longitude: 'longitude' in parking ? parking.longitude : null,
     })
     showParkingDetails()
+  }
+
+  function resolveParkingDetailsReturnPanel() {
+    const returnPanel = parkingDetailsReturnPanelRef.current
+    parkingDetailsReturnPanelRef.current = null
+
+    if (returnPanel === 'requests') {
+      return 'requests' as const
+    }
+
+    if (returnPanel === 'reviews') {
+      return 'reviews' as const
+    }
+
+    return 'parking-list' as const
+  }
+
+  function resolveAddParkingReturnPanel() {
+    const returnPanel = addParkingReturnPanelRef.current
+    const returnRequestTab = addParkingReturnRequestTabRef.current
+    addParkingReturnPanelRef.current = null
+    addParkingReturnRequestTabRef.current = null
+
+    if (returnPanel === 'requests') {
+      return {
+        panel: 'requests' as const,
+        requestTab: returnRequestTab,
+      }
+    }
+
+    if (returnPanel === 'reviews') {
+      return {
+        panel: 'reviews' as const,
+        requestTab: null,
+      }
+    }
+
+    if (returnPanel === 'parking-details') {
+      return {
+        panel: 'parking-details' as const,
+        requestTab: null,
+      }
+    }
+
+    return {
+      panel: 'parking-list' as const,
+      requestTab: null,
+    }
   }
 
   async function handleApproveParking() {
@@ -524,8 +588,7 @@ export function ParkingAdminPage() {
       setSelectedReview(null)
       setFocusedParking(null)
       setIsDeleteDialogOpen(false)
-      const returnPanel = parkingDetailsReturnPanelRef.current
-      parkingDetailsReturnPanelRef.current = null
+      const returnPanel = resolveParkingDetailsReturnPanel()
 
       if (returnPanel === 'requests') {
         showRequests()
@@ -575,8 +638,7 @@ export function ParkingAdminPage() {
     setRejectionReason(null)
     setApprovalDialogContent(null)
     authorProfileReturnPanelRef.current = null
-    const returnPanel = parkingDetailsReturnPanelRef.current
-    parkingDetailsReturnPanelRef.current = null
+    const returnPanel = resolveParkingDetailsReturnPanel()
 
     if (returnPanel === 'requests') {
       showRequests()
@@ -746,9 +808,22 @@ export function ParkingAdminPage() {
       })
 
       setAddParkingDraft(createEmptyAddParkingDraft())
+      window.localStorage.removeItem(ADD_PARKING_STORAGE_KEY)
       setFocusedParking(null)
       setMapRefreshKey((currentKey) => currentKey + 1)
-      closePanel()
+      const returnContext = resolveAddParkingReturnPanel()
+
+      if (returnContext.panel === 'requests') {
+        setRequestsDefaultTab(returnContext.requestTab ?? requestsActiveTabRef.current)
+        showRequests()
+      } else if (returnContext.panel === 'reviews') {
+        showReviews()
+      } else if (returnContext.panel === 'parking-details') {
+        showParkingDetails()
+      } else {
+        showParkingList()
+      }
+
       setSuccessDialogContent({
         description: messages.parkingAddedDescription,
         title: messages.parkingAddedTitle,
@@ -825,21 +900,30 @@ export function ParkingAdminPage() {
         services: addParkingDraft.services,
       })
 
-      setSelectedParking((currentParking) =>
-        currentParking?.id === editingParkingId
-          ? {
-              ...currentParking,
-              address: normalizedAddress,
-            }
-          : currentParking,
-      )
+      setSelectedParking(null)
+      setSelectedAuthor(null)
+      setSelectedComplaint(null)
+      setSelectedReview(null)
       setFocusedParking({
         latitude: addParkingDraft.latitude,
         longitude: addParkingDraft.longitude,
       })
       setMapRefreshKey((currentKey) => currentKey + 1)
-      closePanel()
       setEditingParkingId(null)
+      setIsDeleteDialogOpen(false)
+      setIsRejectDialogOpen(false)
+      setApprovalDialogContent(null)
+      setRejectionReason(null)
+      const returnPanel = resolveParkingDetailsReturnPanel()
+
+      if (returnPanel === 'requests') {
+        showRequests()
+      } else if (returnPanel === 'reviews') {
+        showReviews()
+      } else {
+        showParkingList()
+      }
+
       setSuccessDialogContent({
         description: messages.parkingUpdatedDescription,
         title: messages.parkingUpdatedTitle,
@@ -893,8 +977,11 @@ export function ParkingAdminPage() {
             <RequestsPanel
               key={requestsDefaultTab}
               defaultTab={requestsDefaultTab}
+              onActiveTabChange={(tab) => {
+                requestsActiveTabRef.current = tab
+              }}
               onClose={closePanel}
-              onSelectParking={(parking) => handleSelectParking(parking, true)}
+              onSelectParking={(parking, tab) => handleSelectParking(parking, tab)}
             />
           </div>
         ) : null}

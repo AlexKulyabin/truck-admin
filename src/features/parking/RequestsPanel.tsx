@@ -1,5 +1,5 @@
 import { Search, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   formatCompactCount,
   getParkingMessages,
@@ -15,8 +15,9 @@ type RequestTabId = 'pending' | 'approved' | 'rejected'
 
 type RequestsPanelProps = {
   defaultTab?: RequestTabId
+  onActiveTabChange?: (_tab: RequestTabId) => void
   onClose: () => void
-  onSelectParking: (_parking: ParkingListItem) => void
+  onSelectParking: (_parking: ParkingListItem, _tab: RequestTabId) => void
 }
 
 const requestTabs: Array<{
@@ -36,7 +37,12 @@ function getErrorMessage(error: unknown, fallbackMessage: string) {
   return error instanceof Error ? error.message : fallbackMessage
 }
 
-export function RequestsPanel({ defaultTab = 'pending', onClose, onSelectParking }: RequestsPanelProps) {
+export function RequestsPanel({
+  defaultTab = 'pending',
+  onActiveTabChange,
+  onClose,
+  onSelectParking,
+}: RequestsPanelProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState<RequestTabId>(defaultTab)
   const locale = useSystemLocale()
@@ -44,6 +50,10 @@ export function RequestsPanel({ defaultTab = 'pending', onClose, onSelectParking
   const { error, isLoading, parkingRequests } = useParkingRequests(searchQuery)
   const { requestCounts } = useParkingRequestCounts(searchQuery)
   const heading = useMemo(() => messages.requests, [messages.requests])
+
+  useEffect(() => {
+    onActiveTabChange?.(activeTab)
+  }, [activeTab, onActiveTabChange])
 
   const filteredRequests = useMemo(
     () =>
@@ -68,7 +78,7 @@ export function RequestsPanel({ defaultTab = 'pending', onClose, onSelectParking
   }
 
   function handleSelectRequest(parking: ParkingListItem) {
-    onSelectParking(parking)
+    onSelectParking(parking, activeTab)
   }
 
   return (
@@ -126,7 +136,10 @@ export function RequestsPanel({ defaultTab = 'pending', onClose, onSelectParking
                   'flex h-10 shrink-0 items-center rounded-lg px-2 py-1.5 transition focus:outline-none',
                   isActive ? 'bg-surface shadow-card' : 'hover:bg-surface/70',
                 )}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id)
+                  onActiveTabChange?.(tab.id)
+                }}
                 type="button"
               >
                 <span
