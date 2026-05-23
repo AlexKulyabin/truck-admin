@@ -88,6 +88,8 @@ const ALL_SERVICES: ServiceItem[] = [
   { icon: recreationAreaIcon, id: 'recreation' },
 ]
 
+const NULL_RATING_FALLBACK = 4.0
+
 function hashString(value: string) {
   let hash = 0
 
@@ -98,12 +100,12 @@ function hashString(value: string) {
   return hash
 }
 
-function formatRating(value: number | null, fallbackSeed: number) {
+function formatRating(value: number | null, _fallbackSeed: number) {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value.toFixed(1)
   }
 
-  return (4 + (fallbackSeed % 11) / 10).toFixed(1)
+  return NULL_RATING_FALLBACK.toFixed(1)
 }
 
 function buildParkingDetailModel(parking: ParkingDetailItem): ParkingDetailModel {
@@ -204,7 +206,7 @@ function getLocalizedServiceLabel(serviceId: string, locale: SupportedLocale) {
 
 function formatSummaryRating(value: number | null, locale: SupportedLocale) {
   if (typeof value !== 'number' || Number.isNaN(value)) {
-    return locale === 'ru' ? '0,0' : '0.0'
+    return NULL_RATING_FALLBACK.toFixed(1)
   }
 
   return value.toLocaleString(locale === 'ru' ? 'ru-RU' : 'en-US', {
