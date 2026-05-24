@@ -509,7 +509,6 @@ export function ParkingAdminPage() {
       setSelectedAuthor(null)
       setSelectedComplaint(null)
       setSelectedReview(null)
-      setRequestsDefaultTab('approved')
       setApprovalDialogContent({
         description: messages.approvalDialogSubtitle,
         title: messages.approvalDialogTitle,
@@ -562,7 +561,6 @@ export function ParkingAdminPage() {
       setSelectedReview(null)
       setIsRejectDialogOpen(false)
       setRejectionReason(null)
-      setRequestsDefaultTab('rejected')
       showRequests()
     } catch (error) {
       const details = getErrorDetails(error)
